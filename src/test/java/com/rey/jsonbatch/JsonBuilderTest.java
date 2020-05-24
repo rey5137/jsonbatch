@@ -253,6 +253,24 @@ public class JsonBuilderTest {
         assertEquals("false", result.get(4).get("second"));
     }
 
+    @Test
+    public void buildArray__multiItems() {
+        Map<String, Object> childSchema = new HashMap<>();
+        childSchema.put("first", "int $.second");
+        childSchema.put("__array_path", "$[?(@.fourth == true)]");
+
+        Map<String, Object> secondChildSchema = new HashMap<>();
+        secondChildSchema.put("first", "str $.first");
+        secondChildSchema.put("__array_path", "$[?(@.fourth == false)]");
+
+        List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Arrays.asList(childSchema, secondChildSchema), documentContext);
+
+        assertEquals(3, result.size());
+        assertEquals(1L, result.get(0).get("first"));
+        assertEquals("str2", result.get(1).get("first"));
+        assertEquals("str5", result.get(2).get("first"));
+    }
+
     private void assertArray(List<Object> actuals, Object... expected) {
         assertEquals("Expected array length is " + expected.length + " but actual is " + actuals.size(), expected.length, actuals.size());
         for(int i = 0; i < expected.length; i++) {

@@ -2,7 +2,6 @@ package com.rey.jsonbatch;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.TypeRef;
 import com.rey.jsonbatch.function.JsonFunction;
 
 import java.math.BigDecimal;
@@ -38,30 +37,30 @@ public class JsonBuilder {
     }
 
     public Object build(Object schema, DocumentContext context) {
-        if(schema instanceof String)
-            return buildNode((String)schema, context);
-        if(schema instanceof Map)
-            return buildObject((Map)schema, context);
-        if(schema instanceof Collection)
-            return buildList((Collection)schema, context);
+        if (schema instanceof String)
+            return buildNode((String) schema, context);
+        if (schema instanceof Map)
+            return buildObject((Map) schema, context);
+        if (schema instanceof Collection)
+            return buildList((Collection) schema, context);
         throw new IllegalArgumentException("Unsupported class: " + schema.getClass());
     }
 
     private Object buildNode(String schema, DocumentContext context) {
         String[] parts = schema.split(PATTERN_PARAM_DELIMITER, 2);
-        if(parts.length < 2)
+        if (parts.length < 2)
             throw new IllegalArgumentException("Invalid schema: " + schema);
 
         Type type = Type.from(parts[0]);
 
         Matcher matcher = Pattern.compile(PATTERN_JSON_PATH).matcher(parts[1]);
-        if(matcher.matches()) {
+        if (matcher.matches()) {
             String jsonPath = matcher.group(1);
             return buildNodeFromJsonPath(type, context, jsonPath);
         }
 
         matcher = Pattern.compile(PATTERN_FUNCTION).matcher(parts[1]);
-        if(matcher.matches()) {
+        if (matcher.matches()) {
             String function = matcher.group(1);
             String arguments = matcher.group(2);
             return buildNodeFromFunction(type, function, arguments, context);
@@ -73,7 +72,7 @@ public class JsonBuilder {
     private Map buildObject(Map<String, Object> schema, DocumentContext context) {
         Map<String, Object> result = new LinkedHashMap<>();
         schema.forEach((key, childSchema) -> {
-            if(isValidKey(key)) {
+            if (isValidKey(key)) {
                 if (childSchema instanceof String)
                     result.put(key, buildNode((String) childSchema, context));
                 if (childSchema instanceof Map)
@@ -86,32 +85,34 @@ public class JsonBuilder {
     }
 
     private List buildList(Collection schema, DocumentContext context) {
-        Map<String, Object> childSchema = (Map<String, Object>)schema.iterator().next();
-        String arrayPath = (String)childSchema.get(KEY_ARRAY_PATH);
-        List<Object> list = context.read(arrayPath);
-        return list.stream()
-                .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
-                .collect(Collectors.toList());
+        List<Object> result = new ArrayList<>();
+        for (Map<String, Object> childSchema : (Iterable<Map<String, Object>>) schema) {
+            String arrayPath = (String) childSchema.get(KEY_ARRAY_PATH);
+            List<Object> items = context.read(arrayPath);
+            result.addAll(items.stream()
+                    .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
+                    .collect(Collectors.toList()));
+        }
+        return result;
     }
 
     private Object buildNodeFromJsonPath(Type type, DocumentContext context, String jsonPath) {
         logger.debug("build Node with [%s] jsonPath to [%s] type", jsonPath, type);
         Object object = context.read(jsonPath);
-        if(object == null)
+        if (object == null)
             return null;
 
-        if(!type.isArray) {
-            if(object instanceof List) {
-                List list = (List)object;
+        if (!type.isArray) {
+            if (object instanceof List) {
+                List list = (List) object;
                 object = list.isEmpty() ? null : list.get(0);
             }
             return castToType(object, type);
-        }
-        else {
-            if(!(object instanceof List)) {
+        } else {
+            if (!(object instanceof List)) {
                 object = Collections.singleton(object);
             }
-            return ((List)object).stream()
+            return ((List) object).stream()
                     .map(obj -> castToType(obj, type.elementType))
                     .collect(Collectors.toList());
         }
@@ -121,10 +122,10 @@ public class JsonBuilder {
         Optional<JsonFunction> funcOptional = functions.stream()
                 .filter(func -> func.getName().equals(funcName))
                 .findFirst();
-        if(!funcOptional.isPresent())
+        if (!funcOptional.isPresent())
             throw new IllegalArgumentException("Not support function: " + funcName);
         JsonFunction function = funcOptional.get();
-        if(!function.supportedTypes().contains(type))
+        if (!function.supportedTypes().contains(type))
             throw new IllegalArgumentException(String.format("Function [%s] not support type [%s]", funcName, type));
         return function.handle(this, type, arguments, context, logger);
     }
@@ -147,29 +148,29 @@ public class JsonBuilder {
             case STRING:
                 return object.toString();
             case INTEGER:
-                if(object instanceof String || object instanceof Integer || object instanceof Long)
+                if (object instanceof String || object instanceof Integer || object instanceof Long)
                     return Long.parseLong(object.toString());
-                if(object instanceof Float)
-                    return Math.round((float)object);
-                if(object instanceof Double)
-                    return Math.round((double)object);
+                if (object instanceof Float)
+                    return Math.round((float) object);
+                if (object instanceof Double)
+                    return Math.round((double) object);
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
             case NUMBER:
-                if(object instanceof String || object instanceof Integer || object instanceof Long || object instanceof Float || object instanceof Double)
+                if (object instanceof String || object instanceof Integer || object instanceof Long || object instanceof Float || object instanceof Double)
                     return new BigDecimal(object.toString());
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
             case BOOLEAN:
-                if(object instanceof Boolean)
+                if (object instanceof Boolean)
                     return object;
-                if(object instanceof Integer)
+                if (object instanceof Integer)
                     return !object.equals(0);
-                if(object instanceof Long)
+                if (object instanceof Long)
                     return !object.equals(0L);
-                if(object instanceof Float)
+                if (object instanceof Float)
                     return !object.equals(0F);
-                if(object instanceof Double)
+                if (object instanceof Double)
                     return !object.equals(0D);
-                if(object instanceof String)
+                if (object instanceof String)
                     return ((String) object).equalsIgnoreCase("true");
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to boolean");
         }
@@ -180,17 +181,17 @@ public class JsonBuilder {
         Matcher matcher = Pattern.compile(PATTERN_INLINE_VARIABLE).matcher(rawData);
         int startIndex = 0;
         StringBuilder builder = new StringBuilder();
-        while(matcher.find()) {
+        while (matcher.find()) {
             int groupStart = matcher.start();
             int groupEnd = matcher.end();
-            if(startIndex < groupStart) {
+            if (startIndex < groupStart) {
                 builder.append(rawData, startIndex, groupStart);
             }
             builder.append(build(matcher.group(1), context));
             startIndex = groupEnd;
         }
 
-        if(startIndex < rawData.length())
+        if (startIndex < rawData.length())
             builder.append(rawData, startIndex, rawData.length());
 
         return builder.toString();
@@ -219,7 +220,7 @@ public class JsonBuilder {
         Type(Type elementType, String... values) {
             this.isArray = elementType != null;
             this.elementType = elementType;
-            this.values= values;
+            this.values = values;
         }
 
         static Type from(String value) {
