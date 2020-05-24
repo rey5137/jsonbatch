@@ -1,6 +1,5 @@
 package com.rey.jsonbatch;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -11,8 +10,12 @@ import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.Response;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
 public class BatchEngine {
@@ -34,6 +37,7 @@ public class BatchEngine {
 
     public Response execute(Request originalRequest, BatchTemplate template) throws Exception {
         BatchResponse batchResponse = new BatchResponse();
+        originalRequest.setHeaders(buildHeaders(originalRequest.getHeaders()));
         batchResponse.setOriginal(originalRequest);
         batchResponse.setRequests(new ArrayList<>());
         batchResponse.setResponses(new ArrayList<>());
@@ -41,6 +45,7 @@ public class BatchEngine {
         for(int i = 0; i < template.getRequests().size(); i++ ) {
             Request request = buildRequest(template.getRequests().get(i), context);
             Response response = requestDispatcher.dispatch(request);
+            response.setHeaders(buildHeaders(response.getHeaders()));
             batchResponse.getRequests().add(request);
             batchResponse.getResponses().add(response);
             context = JsonPath.using(configuration).parse(objectMapper.writeValueAsString(batchResponse));
@@ -60,7 +65,7 @@ public class BatchEngine {
             request.setBody(jsonBuilder.build(template.getBody(), context));
         }
         if(template.getHeaders() != null) {
-            request.setHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context));
+            request.setHeaders(buildHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context)));
         }
         else {
             request.setHeaders(new HashMap<>());
@@ -74,7 +79,7 @@ public class BatchEngine {
             response.setBody(jsonBuilder.build(template.getBody(), context));
         }
         if(template.getHeaders() != null) {
-            response.setHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context));
+            response.setHeaders(buildHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context)));
         }
         return response;
     }
@@ -87,6 +92,20 @@ public class BatchEngine {
 
     private String buildURL(String template, DocumentContext context) {
        return (String)jsonBuilder.build("str " + template, context);
+    }
+
+    private Map<String, Object> buildHeaders(Map<String, Object> values) {
+        Map<String, Object> headers = new LinkedHashMap<>();
+        values.forEach( (key, value) -> {
+            if(value instanceof Collection) {
+                headers.put(key,  ((Collection) value).stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toList()));
+            }
+            else
+                headers.put(key, Collections.singletonList(String.valueOf(value)));
+        });
+        return headers;
     }
 
 }
