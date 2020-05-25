@@ -3,7 +3,6 @@ package com.rey.jsonbatch;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.rey.jsonbatch.model.BatchResponse;
 import com.rey.jsonbatch.model.BatchTemplate;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
@@ -26,6 +25,11 @@ public class BatchEngine {
     private JsonBuilder jsonBuilder;
     private RequestDispatcher requestDispatcher;
 
+    private static final String KEY_ORIGINAL = "original";
+    private static final String KEY_REQUESTS = "requests";
+    private static final String KEY_RESPONSES = "responses";
+
+
     public BatchEngine(Configuration configuration,
                        JsonBuilder jsonBuilder,
                        RequestDispatcher requestDispatcher) {
@@ -35,23 +39,25 @@ public class BatchEngine {
     }
 
     public Response execute(Request originalRequest, BatchTemplate template) {
-        BatchResponse batchResponse = new BatchResponse();
-        batchResponse.setOriginal(originalRequest);
-        batchResponse.setRequests(new ArrayList<>());
-        batchResponse.setResponses(new ArrayList<>());
+        Map<String, Object> batchResponse = new LinkedHashMap<>();
+        batchResponse.put(KEY_ORIGINAL, originalRequest.toMap());
+        batchResponse.put(KEY_REQUESTS, new ArrayList<>());
+        batchResponse.put(KEY_RESPONSES, new ArrayList<>());
         DocumentContext context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
         for(int i = 0; i < template.getRequests().size(); i++ ) {
             Request request = buildRequest(template.getRequests().get(i), context);
             Response response = requestDispatcher.dispatch(request);
-            batchResponse.getRequests().add(request);
-            batchResponse.getResponses().add(response);
+            ((List)batchResponse.get(KEY_REQUESTS)).add(request.toMap());
+            ((List)batchResponse.get(KEY_RESPONSES)).add(response.toMap());
             context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
         }
 
         if(template.getResponse() != null)
             return buildResponse(template.getResponse(), context);
 
-        return buildResponse(batchResponse);
+        Response response = new Response();
+        response.setBody(batchResponse);
+        return response;
     }
 
     private Request buildRequest(RequestTemplate template, DocumentContext context) {
@@ -78,12 +84,6 @@ public class BatchEngine {
         if(template.getHeaders() != null) {
             response.setHeaders(buildHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context)));
         }
-        return response;
-    }
-
-    private Response buildResponse(BatchResponse batchResponse) {
-        Response response = new Response();
-        response.setBody(batchResponse);
         return response;
     }
 

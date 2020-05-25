@@ -1,13 +1,9 @@
 package com.rey.jsonbatch.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ResponseTemplate {
 
-    @JsonProperty("headers")
     private Object headers;
 
-    @JsonProperty("body")
     private Object body;
 
     public Object getHeaders() {

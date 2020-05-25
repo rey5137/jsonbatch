@@ -36,8 +36,7 @@ public class JsonBuilderTest {
                 .jsonProvider(new JacksonJsonProvider(objectMapper))
                 .mappingProvider(new JacksonMappingProvider(objectMapper))
                 .build();
-        jsonBuilder = new JsonBuilder((message, arguments) -> System.out.println(String.format(message, arguments)),
-                SumFunction.instance(),
+        jsonBuilder = new JsonBuilder(SumFunction.instance(),
                 AverageFunction.instance(),
                 MinFunction.instance(),
                 MaxFunction.instance(),

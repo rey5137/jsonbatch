@@ -2,9 +2,9 @@ package com.rey.jsonbatch.function;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.rey.jsonbatch.JsonBuilder;
-import com.rey.jsonbatch.Logger;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 public class AverageFunction implements JsonFunction {
 
     private static final String PATTERN_ARGUMENT = "^\\s*\"(.*)\"\\s*$";
+
     @Override
     public String getName() {
         return "average";
@@ -28,9 +29,9 @@ public class AverageFunction implements JsonFunction {
     }
 
     @Override
-    public Object handle(JsonBuilder jsonBuilder, JsonBuilder.Type type, String arguments, DocumentContext context, Logger logger) {
+    public Object handle(JsonBuilder jsonBuilder, JsonBuilder.Type type, String arguments, DocumentContext context) {
         Matcher matcher = Pattern.compile(PATTERN_ARGUMENT).matcher(arguments);
-        if(!matcher.matches())
+        if (!matcher.matches())
             throw new IllegalArgumentException("Invalid argument: " + arguments);
         String path = matcher.group(1);
         switch (type) {
@@ -40,7 +41,7 @@ public class AverageFunction implements JsonFunction {
             }
             case NUMBER: {
                 List<BigDecimal> items = (List<BigDecimal>) jsonBuilder.build("num[] " + path, context);
-                return items.stream().reduce(BigDecimal.ZERO, BigDecimal::add).divide(new BigDecimal(items.size()));
+                return items.stream().reduce(BigDecimal.ZERO, BigDecimal::add).divide(new BigDecimal(items.size()), RoundingMode.HALF_UP);
             }
         }
         return null;

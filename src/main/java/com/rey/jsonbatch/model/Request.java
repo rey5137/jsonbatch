@@ -1,22 +1,17 @@
 package com.rey.jsonbatch.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Request {
 
-    @JsonProperty("http_method")
     private String httpMethod;
 
-    @JsonProperty("url")
     private String url;
 
-    @JsonProperty("headers")
     private Map<String, List<String>> headers;
 
-    @JsonProperty("body")
     private Object body;
 
     public String getHttpMethod() {
@@ -50,4 +45,14 @@ public class Request {
     public void setBody(Object body) {
         this.body = body;
     }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("http_method", httpMethod);
+        map.put("url", url);
+        map.put("headers", headers);
+        map.put("body", body);
+        return map;
+    }
+
 }

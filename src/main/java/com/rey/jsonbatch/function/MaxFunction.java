@@ -2,7 +2,6 @@ package com.rey.jsonbatch.function;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.rey.jsonbatch.JsonBuilder;
-import com.rey.jsonbatch.Logger;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -14,6 +13,7 @@ import java.util.regex.Pattern;
 public class MaxFunction implements JsonFunction {
 
     private static final String PATTERN_ARGUMENT = "^\\s*\"(.*)\"\\s*$";
+
     @Override
     public String getName() {
         return "max";
@@ -28,9 +28,9 @@ public class MaxFunction implements JsonFunction {
     }
 
     @Override
-    public Object handle(JsonBuilder jsonBuilder, JsonBuilder.Type type, String arguments, DocumentContext context, Logger logger) {
+    public Object handle(JsonBuilder jsonBuilder, JsonBuilder.Type type, String arguments, DocumentContext context) {
         Matcher matcher = Pattern.compile(PATTERN_ARGUMENT).matcher(arguments);
-        if(!matcher.matches())
+        if (!matcher.matches())
             throw new IllegalArgumentException("Invalid argument: " + arguments);
         String path = matcher.group(1);
         switch (type) {

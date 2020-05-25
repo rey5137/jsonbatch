@@ -14,14 +14,16 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.11.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
     implementation 'com.jayway.jsonpath:json-path:2.4.0'
+    implementation 'org.slf4j:slf4j-api:1.7.30'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.7.22'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    testCompile 'com.fasterxml.jackson.core:jackson-core:2.11.0'
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+    testCompile 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
     testCompile 'com.google.http-client:google-http-client:1.23.0'
     testCompile 'com.google.http-client:google-http-client-jackson:1.23.0'
 }

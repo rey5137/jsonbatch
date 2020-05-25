@@ -3,6 +3,8 @@ package com.rey.jsonbatch;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.rey.jsonbatch.function.JsonFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,7 +22,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("unchecked")
 public class JsonBuilder {
 
-    private Logger logger;
+    private Logger logger = LoggerFactory.getLogger(JsonBuilder.class);
 
     private static final String PATTERN_PARAM_DELIMITER = "\\s{1,}";
     private static final String PATTERN_JSON_PATH = "(^\\$.*$)";
@@ -31,8 +33,7 @@ public class JsonBuilder {
 
     private List<JsonFunction> functions = new ArrayList<>();
 
-    public JsonBuilder(Logger logger, JsonFunction... functions) {
-        this.logger = logger;
+    public JsonBuilder(JsonFunction... functions) {
         Collections.addAll(this.functions, functions);
     }
 
@@ -97,7 +98,7 @@ public class JsonBuilder {
     }
 
     private Object buildNodeFromJsonPath(Type type, DocumentContext context, String jsonPath) {
-        logger.debug("build Node with [%s] jsonPath to [%s] type", jsonPath, type);
+        logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
         Object object = context.read(jsonPath);
         if (object == null)
             return null;
@@ -127,7 +128,7 @@ public class JsonBuilder {
         JsonFunction function = funcOptional.get();
         if (!function.supportedTypes().contains(type))
             throw new IllegalArgumentException(String.format("Function [%s] not support type [%s]", funcName, type));
-        return function.handle(this, type, arguments, context, logger);
+        return function.handle(this, type, arguments, context);
     }
 
     private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {

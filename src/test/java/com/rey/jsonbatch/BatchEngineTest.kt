@@ -1,6 +1,7 @@
 package com.rey.jsonbatch
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
@@ -29,12 +30,12 @@ class BatchEngineTest {
     @Before
     fun setUp() {
         objectMapper = ObjectMapper()
+        objectMapper.propertyNamingStrategy = PropertyNamingStrategy.SNAKE_CASE
         val conf = Configuration.builder()
                 .jsonProvider(JacksonJsonProvider(objectMapper))
                 .mappingProvider(JacksonMappingProvider(objectMapper))
                 .build()
-        val jsonBuilder = JsonBuilder(Logger { message, arguments -> println(String.format(message, *arguments)) },
-                SumFunction.instance(),
+        val jsonBuilder = JsonBuilder(SumFunction.instance(),
                 AverageFunction.instance(),
                 MinFunction.instance(),
                 MaxFunction.instance())

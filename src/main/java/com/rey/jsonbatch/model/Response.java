@@ -1,16 +1,13 @@
 package com.rey.jsonbatch.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Response {
 
-    @JsonProperty("headers")
     private Map<String, List<String>> headers;
 
-    @JsonProperty("body")
     private Object body;
 
     public Map<String, List<String>> getHeaders() {
@@ -28,4 +25,12 @@ public class Response {
     public void setBody(Object body) {
         this.body = body;
     }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("headers", headers);
+        map.put("body", body);
+        return map;
+    }
+
 }

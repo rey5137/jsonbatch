@@ -1,19 +1,13 @@
 package com.rey.jsonbatch.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class RequestTemplate {
 
-    @JsonProperty("http_method")
     private String httpMethod;
 
-    @JsonProperty("url")
     private String url;
 
-    @JsonProperty("headers")
     private Object headers;
 
-    @JsonProperty("body")
     private Object body;
 
     public String getHttpMethod() {
