@@ -7,24 +7,24 @@ import java.util.List;
 public class BatchTemplate {
 
     @JsonProperty("requests")
-    private List<Request> requests;
+    private List<RequestTemplate> requests;
 
     @JsonProperty("response")
-    private Response response;
+    private ResponseTemplate response;
 
-    public List<Request> getRequests() {
+    public List<RequestTemplate> getRequests() {
         return requests;
     }
 
-    public void setRequests(List<Request> requests) {
+    public void setRequests(List<RequestTemplate> requests) {
         this.requests = requests;
     }
 
-    public Response getResponse() {
+    public ResponseTemplate getResponse() {
         return response;
     }
 
-    public void setResponse(Response response) {
+    public void setResponse(ResponseTemplate response) {
         this.response = response;
     }
 }

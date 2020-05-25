@@ -39,7 +39,7 @@ class BatchEngineTest {
                 MinFunction.instance(),
                 MaxFunction.instance())
         requestDispatcherMock = mock(RequestDispatcher::class.java)
-        batchEngine = BatchEngine(objectMapper, conf, jsonBuilder, requestDispatcherMock)
+        batchEngine = BatchEngine(conf, jsonBuilder, requestDispatcherMock)
     }
     
     @Test
@@ -65,7 +65,7 @@ class BatchEngineTest {
         val original_request = """
             {
                 "headers": {
-                    "header_1": "abc",
+                    "header_1": ["abc"],
                     "header_2": ["qwe", "zxc"]
                 },
                 "body": {
@@ -77,8 +77,8 @@ class BatchEngineTest {
         val response = """
             {
                 "headers": {
-                    "header_1": "1",
-                    "header_2": "2"
+                    "header_1": ["1"],
+                    "header_2": ["2"]
                 },
                 "body": [
                     {   
@@ -132,7 +132,7 @@ class BatchEngineTest {
         val original_request = """
             {
                 "headers": {
-                    "header_1": "abc",
+                    "header_1": ["abc"],
                     "header_2": ["qwe", "zxc"]
                 },
                 "body": {
@@ -144,8 +144,8 @@ class BatchEngineTest {
         val response = """
             {
                 "headers": {
-                    "header_1": "1",
-                    "header_2": "2"
+                    "header_1": [ "1" ],
+                    "header_2": [ "2" ]
                 },
                 "body": [
                     {   

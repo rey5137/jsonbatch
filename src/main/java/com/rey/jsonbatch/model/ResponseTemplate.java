@@ -2,22 +2,19 @@ package com.rey.jsonbatch.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
-import java.util.Map;
-
-public class Response {
+public class ResponseTemplate {
 
     @JsonProperty("headers")
-    private Map<String, List<String>> headers;
+    private Object headers;
 
     @JsonProperty("body")
     private Object body;
 
-    public Map<String, List<String>> getHeaders() {
+    public Object getHeaders() {
         return headers;
     }
 
-    public void setHeaders(Map<String, List<String>> headers) {
+    public void setHeaders(Object headers) {
         this.headers = headers;
     }
 

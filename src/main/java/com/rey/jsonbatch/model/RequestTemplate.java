@@ -2,10 +2,7 @@ package com.rey.jsonbatch.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
-import java.util.Map;
-
-public class Request {
+public class RequestTemplate {
 
     @JsonProperty("http_method")
     private String httpMethod;
@@ -14,7 +11,7 @@ public class Request {
     private String url;
 
     @JsonProperty("headers")
-    private Map<String, List<String>> headers;
+    private Object headers;
 
     @JsonProperty("body")
     private Object body;
@@ -35,11 +32,11 @@ public class Request {
         this.url = url;
     }
 
-    public Map<String, List<String>> getHeaders() {
+    public Object getHeaders() {
         return headers;
     }
 
-    public void setHeaders(Map<String, List<String>> headers) {
+    public void setHeaders(Object headers) {
         this.headers = headers;
     }
 
