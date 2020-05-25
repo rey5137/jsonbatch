@@ -38,19 +38,23 @@ public class JsonBuilder {
     }
 
     public Object build(Object schema, DocumentContext context) {
+        logger.info("Build schema: {}", schema);
         if (schema instanceof String)
             return buildNode((String) schema, context);
         if (schema instanceof Map)
             return buildObject((Map) schema, context);
         if (schema instanceof Collection)
             return buildList((Collection) schema, context);
+        logger.error("Unsupported class: {}", schema.getClass());
         throw new IllegalArgumentException("Unsupported class: " + schema.getClass());
     }
 
     private Object buildNode(String schema, DocumentContext context) {
         String[] parts = schema.split(PATTERN_PARAM_DELIMITER, 2);
-        if (parts.length < 2)
+        if (parts.length < 2) {
+            logger.error("Invalid node schema: {}", schema);
             throw new IllegalArgumentException("Invalid schema: " + schema);
+        }
 
         Type type = Type.from(parts[0]);
 
@@ -74,6 +78,7 @@ public class JsonBuilder {
         Map<String, Object> result = new LinkedHashMap<>();
         schema.forEach((key, childSchema) -> {
             if (isValidKey(key)) {
+                logger.info("Build for [{}] key with schema: {}", key, childSchema);
                 if (childSchema instanceof String)
                     result.put(key, buildNode((String) childSchema, context));
                 if (childSchema instanceof Map)
@@ -88,7 +93,12 @@ public class JsonBuilder {
     private List buildList(Collection schema, DocumentContext context) {
         List<Object> result = new ArrayList<>();
         for (Map<String, Object> childSchema : (Iterable<Map<String, Object>>) schema) {
+            logger.info("Build items with schema: {}", childSchema);
             String arrayPath = (String) childSchema.get(KEY_ARRAY_PATH);
+            if(arrayPath == null) {
+                logger.error("Missing array path in child schema");
+                throw new IllegalArgumentException("Missing array path in child schema");
+            }
             List<Object> items = context.read(arrayPath);
             result.addAll(items.stream()
                     .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
@@ -120,18 +130,24 @@ public class JsonBuilder {
     }
 
     private Object buildNodeFromFunction(Type type, String funcName, String arguments, DocumentContext context) {
+        logger.trace("build Node with [{}] function and [{}] arguments to [{}] type", funcName, arguments, type);
         Optional<JsonFunction> funcOptional = functions.stream()
                 .filter(func -> func.getName().equals(funcName))
                 .findFirst();
-        if (!funcOptional.isPresent())
+        if (!funcOptional.isPresent()) {
+            logger.error("Unsupported function: {}", funcName);
             throw new IllegalArgumentException("Not support function: " + funcName);
+        }
         JsonFunction function = funcOptional.get();
-        if (!function.supportedTypes().contains(type))
+        if (!function.supportedTypes().contains(type)) {
+            logger.error("Function [{}] not support type [{}]", funcName, type);
             throw new IllegalArgumentException(String.format("Function [%s] not support type [%s]", funcName, type));
+        }
         return function.handle(this, type, arguments, context);
     }
 
     private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {
+        logger.trace("build Node with [{}] rawData to [{}] type", rawData, type);
         switch (type) {
             case STRING:
                 return buildStringFromRawData(rawData, context);

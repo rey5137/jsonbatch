@@ -26,6 +26,8 @@ dependencies {
     testCompile 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
     testCompile 'com.google.http-client:google-http-client:1.23.0'
     testCompile 'com.google.http-client:google-http-client-jackson:1.23.0'
+    testCompile 'ch.qos.logback:logback-classic:1.2.3'
+    testCompile 'ch.qos.logback:logback-core:1.2.3'
 }
 compileKotlin {
     kotlinOptions {
