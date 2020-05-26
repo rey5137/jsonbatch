@@ -156,7 +156,7 @@ public class JsonBuilder {
             case BOOLEAN:
                 return castToType(rawData, type);
             default:
-                return JsonPath.using(context.configuration()).parse(rawData);
+                return context.configuration().jsonProvider().parse(rawData);
         }
     }
 
