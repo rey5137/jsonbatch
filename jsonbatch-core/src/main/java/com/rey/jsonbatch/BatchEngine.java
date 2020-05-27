@@ -11,6 +11,7 @@ import com.rey.jsonbatch.model.ResponseTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +43,7 @@ public class BatchEngine {
         this.requestDispatcher = requestDispatcher;
     }
 
-    public Response execute(Request originalRequest, BatchTemplate template) {
+    public Response execute(Request originalRequest, BatchTemplate template) throws IOException {
         logger.info("Start executing batch with [{}] original request", originalRequest);
         Map<String, Object> batchResponse = new LinkedHashMap<>();
         batchResponse.put(KEY_ORIGINAL, originalRequest.toMap());
@@ -52,7 +53,7 @@ public class BatchEngine {
         for(int i = 0; i < template.getRequests().size(); i++ ) {
             logger.info("Executing request with [{}] index in batch", i);
             Request request = buildRequest(template.getRequests().get(i), context);
-            Response response = requestDispatcher.dispatch(request);
+            Response response = requestDispatcher.dispatch(request, configuration.jsonProvider());
             ((List)batchResponse.get(KEY_REQUESTS)).add(request.toMap());
             ((List)batchResponse.get(KEY_RESPONSES)).add(response.toMap());
             context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));

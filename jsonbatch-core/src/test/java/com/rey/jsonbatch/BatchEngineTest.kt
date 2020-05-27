@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
+import com.jayway.jsonpath.spi.json.JsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.rey.jsonbatch.function.AverageFunction
 import com.rey.jsonbatch.function.MaxFunction
@@ -97,7 +98,7 @@ class BatchEngineTest {
         val originalRequest = objectMapper.readValue(original_request, Request::class.java)
         val firstResponse = objectMapper.readValue(response, Response::class.java)
 
-        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java));
+        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java));
         val finalResponse = batchEngine.execute(originalRequest, batchTemplate)
         println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
     }
@@ -164,7 +165,7 @@ class BatchEngineTest {
         val originalRequest = objectMapper.readValue(original_request, Request::class.java)
         val firstResponse = objectMapper.readValue(response, Response::class.java)
 
-        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java));
+        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java));
         val finalResponse = batchEngine.execute(originalRequest, batchTemplate)
         println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
     }
