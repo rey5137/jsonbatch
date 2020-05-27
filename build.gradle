@@ -1,10 +1,18 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
+    }
+}
+
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.3.72'
 }
 
-group 'com.rey'
-version '1.0-SNAPSHOT'
+apply plugin: 'com.jfrog.bintray'
 
 sourceCompatibility = 1.8
 
@@ -37,5 +45,61 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+}
+
+ext {
+    bintrayUser = BINTRAY_USERNAME
+    bintrayApiKey = BINTRAY_APIKEY
+    bintrayGpgPassword = GPG_PASSWORD
+
+    bintrayRepo = 'maven'
+    bintrayName = 'jsonbatch'
+
+    publishedGroupId = 'com.github.rey5137'
+    libraryName = 'JsonBatch'
+    artifact = 'jsonbatch'
+
+    libraryDescription = 'An Engine to run batch request with JSON based REST APIs'
+
+    siteUrl = 'https://github.com/rey5137/jsonbatch'
+    gitUrl = 'https://github.com/rey5137/jsonbatch.git'
+
+    libraryVersion = '1.0.0'
+
+    developerId = 'rey5137'
+    developerName = 'Rey Pham'
+    developerEmail = 'rey5137@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
+group = publishedGroupId
+version = libraryVersion
+
+bintray {
+    user = bintrayUser
+    key = bintrayApiKey
+
+    configurations = ['archives']
+    pkg {
+        repo = bintrayRepo
+        name = bintrayName
+        desc = libraryDescription
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = allLicenses
+        publish = true
+        publicDownloadNumbers = true
+        version {
+            desc = libraryDescription
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = bintrayGpgPassword
+                //Optional. The passphrase for GPG signing'
+            }
+        }
     }
 }
