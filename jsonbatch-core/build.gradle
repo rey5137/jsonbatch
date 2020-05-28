@@ -12,6 +12,8 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.72'
 }
 
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 sourceCompatibility = 1.8
@@ -50,16 +52,69 @@ ext {
     bintrayName = 'jsonbatch-core'
     artifact = 'jsonbatch-core'
     libraryDescription = 'An Engine to run batch request with JSON based REST APIs'
+    libraryVersion = '1.0.0'
 }
 
 group = publishedGroupId
 version = libraryVersion
 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.java.srcDirs
+    archiveClassifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            id developerId
+            name developerName
+            email developerEmail
+        }
+    }
+
+    scm {
+        url siteUrl
+    }
+}
+
+// Create the publication with the pom configuration:
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            groupId publishedGroupId
+            artifactId artifact
+            version libraryVersion
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', libraryDescription)
+                root.appendNode('name', libraryName)
+                root.appendNode('url', siteUrl)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
 bintray {
     user = bintrayUser
     key = bintrayApiKey
-
-    configurations = ['archives']
+    publications = ['MyPublication']
+//    configurations = ['archives']
     pkg {
         repo = bintrayRepo
         name = bintrayName
