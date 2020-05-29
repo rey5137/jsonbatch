@@ -215,7 +215,7 @@ public class JsonBuilderTest {
 
     @Test
     public void buildNode__rawString__inlineVariable() {
-        String schema = "str asd @{str $[0].first}@ qwe @{int __sum(\"$[*].second\")}@ zxc";
+        String schema = "str asd @{$[0].first}@ qwe @{int __sum(\"$[*].second\")}@ zxc";
         Object result = jsonBuilder.build(schema, documentContext);
         assertEquals("asd str1 qwe 10 zxc", result);
     }
@@ -253,6 +253,13 @@ public class JsonBuilderTest {
         String schema = "int[] [ 1, 2 ]";
         List<Object> result = (List<Object>)jsonBuilder.build(schema, documentContext);
         assertArray(result, 1, 2);
+    }
+
+    @Test
+    public void buildNode__missingType() {
+        assertEquals("str1", jsonBuilder.build("$[0].first", documentContext));
+        assertEquals(2, jsonBuilder.build("$[1].second", documentContext));
+        assertEquals(true, jsonBuilder.build("$[0].fourth", documentContext));
     }
 
     @Test

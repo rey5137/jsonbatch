@@ -28,7 +28,6 @@ public class JsonBuilder {
 
     private Logger logger = LoggerFactory.getLogger(JsonBuilder.class);
 
-    private static final String PATTERN_PARAM_DELIMITER = "\\s{1,}";
     private static final String PATTERN_INLINE_VARIABLE = "@\\{(((?!@\\{).)*)}@";
 
     private static final String KEY_ARRAY_PATH = "__array_path";
@@ -54,15 +53,20 @@ public class JsonBuilder {
     }
 
     private Object buildNode(String schema, DocumentContext context) {
-        String[] parts = schema.split(PATTERN_PARAM_DELIMITER, 2);
-        if (parts.length < 2) {
-            logger.error("Invalid node schema: {}", schema);
-            throw new IllegalArgumentException("Invalid schema: " + schema);
+        Type type = null;
+        List<TokenValue> tokenValues = null;
+        for(Type t : Type.values()) {
+            for(String value : t.values) {
+                if(schema.startsWith(value)) {
+                    type = t;
+                    tokenValues = parser.parse(schema.substring(value.length()).trim());
+                    break;
+                }
+            }
         }
+        if(type == null)
+            tokenValues = parser.parse(schema.trim());
 
-        Type type = Type.from(parts[0]);
-
-        List<TokenValue> tokenValues = parser.parse(parts[1]);
         TokenValue firstToken = tokenValues.get(0);
         if(firstToken.getToken() == Token.JSON_PATH)
             return buildNodeFromJsonPath(type, context, firstToken.getValue());
@@ -111,7 +115,8 @@ public class JsonBuilder {
         Object object = context.read(jsonPath);
         if (object == null)
             return null;
-
+        if(type == null)
+            return object;
         if (!type.isArray) {
             if (object instanceof List) {
                 List list = (List) object;
@@ -182,6 +187,8 @@ public class JsonBuilder {
 
     private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {
         logger.trace("build Node with [{}] rawData to [{}] type", rawData, type);
+        if(type == null)
+            return buildStringFromRawData(rawData, context);
         switch (type) {
             case STRING:
                 return buildStringFromRawData(rawData, context);
@@ -253,16 +260,16 @@ public class JsonBuilder {
     }
 
     public enum Type {
-        STRING(null, "str", "string"),
-        INTEGER(null, "int", "integer"),
-        NUMBER(null, "num", "number"),
-        BOOLEAN(null, "bool", "boolean"),
-        OBJECT(null, "obj", "object"),
-        STRING_ARRAY(Type.STRING, "str[]", "string[]"),
-        INTEGER_ARRAY(Type.INTEGER, "int[]", "integer[]"),
-        NUMBER_ARRAY(Type.NUMBER, "num[]", "number[]"),
-        BOOLEAN_ARRAY(Type.BOOLEAN, "bool[]", "boolean[]"),
-        OBJECT_ARRAY(Type.OBJECT, "obj[]", "object[]");
+        STRING(null, "str ", "string "),
+        INTEGER(null, "int ", "integer "),
+        NUMBER(null, "num ", "number "),
+        BOOLEAN(null, "bool ", "boolean "),
+        OBJECT(null, "obj ", "object "),
+        STRING_ARRAY(Type.STRING, "str[] ", "string[] "),
+        INTEGER_ARRAY(Type.INTEGER, "int[] ", "integer[] "),
+        NUMBER_ARRAY(Type.NUMBER, "num[] ", "number[] "),
+        BOOLEAN_ARRAY(Type.BOOLEAN, "bool[] ", "boolean[] "),
+        OBJECT_ARRAY(Type.OBJECT, "obj[] ", "object[] ");
 
         public final boolean isArray;
         public final Type elementType;
