@@ -15,12 +15,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.rey.jsonbatch.TestUtils.assertArray;
 import static org.junit.Assert.assertEquals;
 
 public class JsonBuilderTest {
@@ -152,7 +154,7 @@ public class JsonBuilderTest {
     public void buildNode__sumFunction__intValue() {
         String schema = "int __sum(\"$[*].second\")";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(10L, result);
+        assertEquals(new BigInteger("10"), result);
     }
 
     @Test
@@ -166,7 +168,7 @@ public class JsonBuilderTest {
     public void buildNode__averageFunction__intValue() {
         String schema = "int __average(\"$[*].second\")";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(2L, result);
+        assertEquals(new BigInteger("2"), result);
     }
 
     @Test
@@ -180,7 +182,7 @@ public class JsonBuilderTest {
     public void buildNode__minFunction__intValue() {
         String schema = "int __min(\"$[*].second\")";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(0L, result);
+        assertEquals(new BigInteger("0"), result);
     }
 
     @Test
@@ -194,7 +196,7 @@ public class JsonBuilderTest {
     public void buildNode__maxFunction__intValue() {
         String schema = "int __max(\"$[*].second\")";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(4L, result);
+        assertEquals(new BigInteger("4"), result);
     }
 
     @Test
@@ -206,7 +208,7 @@ public class JsonBuilderTest {
 
     @Test
     public void buildNode__regexFunction() {
-        String schema = "str __regex(\"$[0].first\", \"^str(\\d)$\", 1)";
+        String schema = "str __regex(\"$[0].first\", \"^str(\\\\d)$\", 1)";
         Object result = jsonBuilder.build(schema, documentContext);
         assertEquals("1", result);
     }
@@ -303,13 +305,6 @@ public class JsonBuilderTest {
         assertEquals(1L, result.get(0).get("first"));
         assertEquals("str2", result.get(1).get("first"));
         assertEquals("str5", result.get(2).get("first"));
-    }
-
-    private void assertArray(List<Object> actuals, Object... expected) {
-        assertEquals("Expected array length is " + expected.length + " but actual is " + actuals.size(), expected.length, actuals.size());
-        for(int i = 0; i < expected.length; i++) {
-            assertEquals("Expected element " + i + " is " + expected[i] + " but actual is " + actuals.get(i), expected[i], actuals.get(i));
-        }
     }
 
     private List<Data> buildData() {

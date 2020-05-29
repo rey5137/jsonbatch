@@ -2,11 +2,15 @@ package com.rey.jsonbatch;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.rey.jsonbatch.function.JsonFunction;
+import com.rey.jsonbatch.function.Function;
+import com.rey.jsonbatch.parser.Parser;
+import com.rey.jsonbatch.parser.Token;
+import com.rey.jsonbatch.parser.TokenValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,15 +29,15 @@ public class JsonBuilder {
     private Logger logger = LoggerFactory.getLogger(JsonBuilder.class);
 
     private static final String PATTERN_PARAM_DELIMITER = "\\s{1,}";
-    private static final String PATTERN_JSON_PATH = "(^\\$.*$)";
-    private static final String PATTERN_FUNCTION = "^__(\\w*)\\((.*)\\)$";
     private static final String PATTERN_INLINE_VARIABLE = "@\\{(((?!@\\{).)*)}@";
 
     private static final String KEY_ARRAY_PATH = "__array_path";
 
-    private List<JsonFunction> functions = new ArrayList<>();
+    private List<Function> functions = new ArrayList<>();
 
-    public JsonBuilder(JsonFunction... functions) {
+    private Parser parser = new Parser();
+
+    public JsonBuilder(Function... functions) {
         Collections.addAll(this.functions, functions);
     }
 
@@ -58,20 +62,15 @@ public class JsonBuilder {
 
         Type type = Type.from(parts[0]);
 
-        Matcher matcher = Pattern.compile(PATTERN_JSON_PATH).matcher(parts[1]);
-        if (matcher.matches()) {
-            String jsonPath = matcher.group(1);
-            return buildNodeFromJsonPath(type, context, jsonPath);
+        List<TokenValue> tokenValues = parser.parse(parts[1]);
+        TokenValue firstToken = tokenValues.get(0);
+        if(firstToken.getToken() == Token.JSON_PATH)
+            return buildNodeFromJsonPath(type, context, firstToken.getValue());
+        else if(firstToken.getToken() == Token.FUNC){
+            return buildNodeFromFunction(type, tokenValues, context);
         }
 
-        matcher = Pattern.compile(PATTERN_FUNCTION).matcher(parts[1]);
-        if (matcher.matches()) {
-            String function = matcher.group(1);
-            String arguments = matcher.group(2);
-            return buildNodeFromFunction(type, function, arguments, context);
-        }
-
-        return buildNodeFromRawData(type, parts[1], context);
+        return buildNodeFromRawData(type, firstToken.getValue(), context);
     }
 
     private Map buildObject(Map<String, Object> schema, DocumentContext context) {
@@ -129,21 +128,56 @@ public class JsonBuilder {
         }
     }
 
-    private Object buildNodeFromFunction(Type type, String funcName, String arguments, DocumentContext context) {
-        logger.trace("build Node with [{}] function and [{}] arguments to [{}] type", funcName, arguments, type);
-        Optional<JsonFunction> funcOptional = functions.stream()
+    private Object buildNodeFromFunction(Type type, List<TokenValue> tokenValues, DocumentContext context) {
+        TokenValue tokenValue = tokenValues.remove(0);
+        final String funcName = tokenValue.getValue();
+        logger.trace("build Node with [{}] function to [{}] type", funcName, type);
+        Optional<Function> funcOptional = functions.stream()
                 .filter(func -> func.getName().equals(funcName))
                 .findFirst();
         if (!funcOptional.isPresent()) {
             logger.error("Unsupported function: {}", funcName);
             throw new IllegalArgumentException("Not support function: " + funcName);
         }
-        JsonFunction function = funcOptional.get();
-        if (!function.supportedTypes().contains(type)) {
-            logger.error("Function [{}] not support type [{}]", funcName, type);
-            throw new IllegalArgumentException(String.format("Function [%s] not support type [%s]", funcName, type));
+        Function function = funcOptional.get();
+        List<Object> arguments = new ArrayList<>();
+
+        while(!tokenValues.isEmpty()) {
+            tokenValue = tokenValues.remove(0);
+            if(tokenValue.getToken() == Token.JSON_PATH)
+                arguments.add(context.read(tokenValue.getValue()));
+            else if(tokenValue.getToken() == Token.FUNC)
+                arguments.add(buildNodeFromFunction(null, tokenValues, context));
+            else if(tokenValue.getToken() == Token.RAW)
+                arguments.add(parseRawData(tokenValue.getValue(), context));
+            else if(tokenValue.getToken() == Token.END_FUNC)
+                break;
         }
-        return function.handle(this, type, arguments, context);
+
+        return function.invoke(type, arguments);
+    }
+
+    private Object parseRawData(String rawData, DocumentContext context) {
+        if(rawData.contains(".")) {
+            try {
+                return new BigDecimal(rawData);
+            }
+            catch (NumberFormatException ex) {
+                logger.trace("Cannot parse [{}] as decimal", rawData);
+            }
+        }
+        else {
+            try {
+                return new BigInteger(rawData);
+            }
+            catch (NumberFormatException ex) {
+                logger.trace("Cannot parse [{}] as integer", rawData);
+            }
+        }
+        if(rawData.equalsIgnoreCase("true") || rawData.equalsIgnoreCase("false")) {
+            return rawData.equalsIgnoreCase("true");
+        }
+        return buildStringFromRawData(rawData, context);
     }
 
     private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {

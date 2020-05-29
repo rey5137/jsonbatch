@@ -1,18 +1,21 @@
 package com.rey.jsonbatch.function;
 
-import com.jayway.jsonpath.DocumentContext;
-import com.rey.jsonbatch.JsonBuilder;
+import com.rey.jsonbatch.JsonBuilder.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
+import java.math.BigInteger;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static com.rey.jsonbatch.JsonBuilder.Type.INTEGER;
+import static com.rey.jsonbatch.function.MathUtils.toBigDecimal;
+import static com.rey.jsonbatch.function.MathUtils.toBigInteger;
 
 @SuppressWarnings("unchecked")
-public class SumFunction implements JsonFunction {
+public class SumFunction implements Function {
 
-    private static final String PATTERN_ARGUMENT = "^\\s*\"(.*)\"\\s*$";
+    private Logger logger = LoggerFactory.getLogger(SumFunction.class);
 
     @Override
     public String getName() {
@@ -20,33 +23,46 @@ public class SumFunction implements JsonFunction {
     }
 
     @Override
-    public List<JsonBuilder.Type> supportedTypes() {
-        return Arrays.asList(
-                JsonBuilder.Type.INTEGER,
-                JsonBuilder.Type.NUMBER
-        );
+    public Object invoke(Type type, List<Object> arguments) {
+        if(type == INTEGER)
+            return sumAll(new BigInteger("0"), arguments);
+        return sumAll(new BigDecimal("0"), arguments);
     }
 
-    @Override
-    public Object handle(JsonBuilder jsonBuilder, JsonBuilder.Type type, String arguments, DocumentContext context) {
-        Matcher matcher = Pattern.compile(PATTERN_ARGUMENT).matcher(arguments);
-        if (!matcher.matches())
-            throw new IllegalArgumentException("Invalid argument: " + arguments);
-        String path = matcher.group(1);
-        switch (type) {
-            case INTEGER: {
-                List<Long> items = (List<Long>) jsonBuilder.build("int[] " + path, context);
-                return items.stream().reduce(0L, Long::sum);
-            }
-            case NUMBER: {
-                List<BigDecimal> items = (List<BigDecimal>) jsonBuilder.build("num[] " + path, context);
-                return items.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+    private BigInteger sumAll(BigInteger total, List<Object> items) {
+        for(Object item : items) {
+            if(item instanceof List)
+                total = sumAll(total, (List) item);
+            else {
+                BigInteger value = toBigInteger(item);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", item.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                total = total.add(value);
             }
         }
-        return null;
+        return total;
+    }
+
+    private BigDecimal sumAll(BigDecimal total, List<Object> items) {
+        for(Object item : items) {
+            if(item instanceof List)
+                total = sumAll(total, (List) item);
+            else {
+                BigDecimal value = toBigDecimal(item);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", item.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                total = total.add(value);
+            }
+        }
+        return total;
     }
 
     public static SumFunction instance() {
         return new SumFunction();
     }
+
 }

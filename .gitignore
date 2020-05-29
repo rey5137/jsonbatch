@@ -1,3 +1,5 @@
 /build/
 /.gradle/
 /.idea/
+/jsonbatch-apache-httpclient/build/
+/jsonbatch-core/build/
