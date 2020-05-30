@@ -13,13 +13,18 @@ import static com.rey.jsonbatch.function.MathUtils.toBigDecimal;
 import static com.rey.jsonbatch.function.MathUtils.toBigInteger;
 
 @SuppressWarnings("unchecked")
-public class AverageFunction implements Function {
+public class AverageFunction extends Function {
 
     private Logger logger = LoggerFactory.getLogger(AverageFunction.class);
 
     @Override
     public String getName() {
         return "average";
+    }
+
+    @Override
+    public boolean isReduceFunction() {
+        return false;
     }
 
     @Override

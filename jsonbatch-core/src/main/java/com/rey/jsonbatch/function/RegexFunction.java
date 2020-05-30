@@ -9,13 +9,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("unchecked")
-public class RegexFunction implements Function {
+public class RegexFunction extends Function {
 
     private Logger logger = LoggerFactory.getLogger(RegexFunction.class);
 
     @Override
     public String getName() {
         return "regex";
+    }
+
+    @Override
+    public boolean isReduceFunction() {
+        return false;
     }
 
     @Override

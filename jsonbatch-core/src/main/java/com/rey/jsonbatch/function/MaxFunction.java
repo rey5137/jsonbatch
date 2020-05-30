@@ -14,7 +14,7 @@ import static com.rey.jsonbatch.function.MathUtils.toBigDecimal;
 import static com.rey.jsonbatch.function.MathUtils.toBigInteger;
 
 @SuppressWarnings("unchecked")
-public class MaxFunction implements Function {
+public class MaxFunction extends Function {
 
     private Logger logger = LoggerFactory.getLogger(MaxFunction.class);
 
@@ -24,10 +24,40 @@ public class MaxFunction implements Function {
     }
 
     @Override
-    public Object invoke(Type type, List<Object> arguments) {
-        if(type == INTEGER)
-            return maxInteger(arguments);
-        return maxDecimal(arguments);
+    public boolean isReduceFunction() {
+        return true;
+    }
+
+    @Override
+    public Result handle(Type type, Object argument, Result prevResult) {
+        if(type == INTEGER) {
+            Result<BigInteger> result = prevResult == null ? Result.of(null, false) : prevResult;
+            if(argument instanceof List)
+                result.setValue(max(result.getValue(), maxInteger((List) argument)));
+            else {
+                BigInteger value = toBigInteger(argument);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", argument.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                result.setValue(max(result.getValue(), value));
+            }
+            return result;
+        }
+        else {
+            Result<BigDecimal> result = prevResult == null ? Result.of(null, false) : prevResult;
+            if(argument instanceof List)
+                result.setValue(max(result.getValue(), maxDecimal((List) argument)));
+            else {
+                BigDecimal value = toBigDecimal(argument);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", argument.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                result.setValue(max(result.getValue(), value));
+            }
+            return result;
+        }
     }
 
     private BigInteger maxInteger(List<Object> items) {

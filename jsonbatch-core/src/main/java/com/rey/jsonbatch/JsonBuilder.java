@@ -14,10 +14,10 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -32,12 +32,13 @@ public class JsonBuilder {
 
     private static final String KEY_ARRAY_PATH = "__array_path";
 
-    private List<Function> functions = new ArrayList<>();
+    private Map<String, Function> functionMap = new HashMap<>();
 
     private Parser parser = new Parser();
 
     public JsonBuilder(Function... functions) {
-        Collections.addAll(this.functions, functions);
+        for(Function f :  functions)
+            functionMap.put(f.getName(), f);
     }
 
     public Object build(Object schema, DocumentContext context) {
@@ -137,29 +138,45 @@ public class JsonBuilder {
         TokenValue tokenValue = tokenValues.remove(0);
         final String funcName = tokenValue.getValue();
         logger.trace("build Node with [{}] function to [{}] type", funcName, type);
-        Optional<Function> funcOptional = functions.stream()
-                .filter(func -> func.getName().equals(funcName))
-                .findFirst();
-        if (!funcOptional.isPresent()) {
+        Function function = functionMap.get(funcName);
+        if(function == null) {
             logger.error("Unsupported function: {}", funcName);
             throw new IllegalArgumentException("Not support function: " + funcName);
         }
-        Function function = funcOptional.get();
-        List<Object> arguments = new ArrayList<>();
-
-        while(!tokenValues.isEmpty()) {
-            tokenValue = tokenValues.remove(0);
-            if(tokenValue.getToken() == Token.JSON_PATH)
-                arguments.add(context.read(tokenValue.getValue()));
-            else if(tokenValue.getToken() == Token.FUNC)
-                arguments.add(buildNodeFromFunction(null, tokenValues, context));
-            else if(tokenValue.getToken() == Token.RAW)
-                arguments.add(parseRawData(tokenValue.getValue(), context));
-            else if(tokenValue.getToken() == Token.END_FUNC)
-                break;
+        if(function.isReduceFunction()) {
+            Function.Result result = null;
+            while (!tokenValues.isEmpty()) {
+                tokenValue = tokenValues.remove(0);
+                Object argument = null;
+                if (tokenValue.getToken() == Token.JSON_PATH)
+                    argument = context.read(tokenValue.getValue());
+                else if (tokenValue.getToken() == Token.FUNC)
+                    argument = buildNodeFromFunction(null, tokenValues, context);
+                else if (tokenValue.getToken() == Token.RAW)
+                    argument = parseRawData(tokenValue.getValue(), context);
+                else if (tokenValue.getToken() == Token.END_FUNC)
+                    break;
+                result = function.handle(type, argument, result);
+                if(result != null && result.isDone())
+                    return result.getValue();
+            }
+            return result == null ? null : result.getValue();
         }
-
-        return function.invoke(type, arguments);
+        else {
+            List<Object> arguments = new ArrayList<>();
+            while (!tokenValues.isEmpty()) {
+                tokenValue = tokenValues.remove(0);
+                if (tokenValue.getToken() == Token.JSON_PATH)
+                    arguments.add(context.read(tokenValue.getValue()));
+                else if (tokenValue.getToken() == Token.FUNC)
+                    arguments.add(buildNodeFromFunction(null, tokenValues, context));
+                else if (tokenValue.getToken() == Token.RAW)
+                    arguments.add(parseRawData(tokenValue.getValue(), context));
+                else if (tokenValue.getToken() == Token.END_FUNC)
+                    break;
+            }
+            return function.invoke(type, arguments);
+        }
     }
 
     private Object parseRawData(String rawData, DocumentContext context) {

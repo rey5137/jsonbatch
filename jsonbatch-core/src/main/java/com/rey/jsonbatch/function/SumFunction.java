@@ -13,7 +13,7 @@ import static com.rey.jsonbatch.function.MathUtils.toBigDecimal;
 import static com.rey.jsonbatch.function.MathUtils.toBigInteger;
 
 @SuppressWarnings("unchecked")
-public class SumFunction implements Function {
+public class SumFunction extends Function {
 
     private Logger logger = LoggerFactory.getLogger(SumFunction.class);
 
@@ -23,10 +23,40 @@ public class SumFunction implements Function {
     }
 
     @Override
-    public Object invoke(Type type, List<Object> arguments) {
-        if(type == INTEGER)
-            return sumAll(new BigInteger("0"), arguments);
-        return sumAll(new BigDecimal("0"), arguments);
+    public boolean isReduceFunction() {
+        return true;
+    }
+
+    @Override
+    public Result handle(Type type, Object argument, Result prevResult) {
+        if(type == INTEGER) {
+            Result<BigInteger> result = prevResult == null ? Result.of(new BigInteger("0"), false) : prevResult;
+            if(argument instanceof List)
+                result.setValue(sumAll(result.getValue(), (List) argument));
+            else {
+                BigInteger value = toBigInteger(argument);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", argument.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                result.setValue(result.getValue().add(value));
+            }
+            return result;
+        }
+        else {
+            Result<BigDecimal> result = prevResult == null ? Result.of(new BigDecimal("0"), false) : prevResult;
+            if(argument instanceof List)
+                result.setValue(sumAll(result.getValue(), (List) argument));
+            else {
+                BigDecimal value = toBigDecimal(argument);
+                if(value == null) {
+                    logger.error("Cannot process [{}] type", argument.getClass());
+                    throw new IllegalArgumentException("Cannot process item");
+                }
+                result.setValue(result.getValue().add(value));
+            }
+            return result;
+        }
     }
 
     private BigInteger sumAll(BigInteger total, List<Object> items) {
