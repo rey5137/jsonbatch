@@ -51,25 +51,67 @@ public class BatchEngine {
         batchResponse.put(KEY_REQUESTS, new ArrayList<>());
         batchResponse.put(KEY_RESPONSES, new ArrayList<>());
         DocumentContext context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
-        for(int i = 0; i < template.getRequests().size(); i++ ) {
-            logger.info("Executing request with [{}] index in batch", i);
-            Request request = buildRequest(template.getRequests().get(i), context);
+
+        RequestTemplate requestTemplate = chooseRequestTemplate(template.getRequests(), context);
+        int count = 0;
+        while(requestTemplate != null) {
+            logger.info("Preparing request with [{}] index", count);
+            Request request = buildRequest(requestTemplate, context);
+            logger.info("Dispatching request with [{}] index", count);
             Response response = requestDispatcher.dispatch(request, configuration.jsonProvider());
+            logger.info("Received response with [{}] status", response.getStatus());
             ((List)batchResponse.get(KEY_REQUESTS)).add(request.toMap());
             ((List)batchResponse.get(KEY_RESPONSES)).add(response.toMap());
             context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
-            logger.info("Done Executing request with [{}] index in batch", i);
+            logger.info("Done executing request with [{}] index", count);
+
+            ResponseTemplate responseTemplate = chooseResponseTemplate(requestTemplate.getResponses(), context);
+            if(responseTemplate != null) {
+                logger.info("Found break response");
+                response = buildResponse(responseTemplate, context);
+                logger.info("Done executing batch with [{}] original request", originalRequest);
+                return response;
+            }
+
+            requestTemplate = chooseRequestTemplate(requestTemplate.getRequests(), context);
+            count ++;
         }
 
         Response response;
-        if(template.getResponse() != null)
-            response = buildResponse(template.getResponse(), context);
+        ResponseTemplate responseTemplate = chooseResponseTemplate(template.getResponses(), context);
+        if(responseTemplate != null) {
+            logger.info("Found final response");
+            response = buildResponse(responseTemplate, context);
+        }
         else {
+            logger.info("Not found final response. Return all batch responses");
             response = new Response();
+            response.setStatus(200);
             response.setBody(batchResponse);
         }
+
         logger.info("Done executing batch with [{}] original request", originalRequest);
         return response;
+    }
+
+    private RequestTemplate chooseRequestTemplate(List<RequestTemplate> requestTemplates, DocumentContext context) {
+        if(requestTemplates == null)
+            return null;
+        for(RequestTemplate requestTemplate : requestTemplates) {
+            if(requestTemplate.getPredicate() == null || MathUtils.toBoolean(jsonBuilder.build(requestTemplate.getPredicate(), context)))
+                return requestTemplate;
+        }
+        return null;
+    }
+
+    private ResponseTemplate chooseResponseTemplate(List<ResponseTemplate> responseTemplates, DocumentContext context) {
+        if(responseTemplates == null)
+            return null;
+        for(ResponseTemplate responseTemplate : responseTemplates) {
+            if(responseTemplate.getPredicate() == null || MathUtils.toBoolean(jsonBuilder.build(responseTemplate.getPredicate(), context)))
+                return responseTemplate;
+        }
+        return null;
     }
 
     private Request buildRequest(RequestTemplate template, DocumentContext context) {

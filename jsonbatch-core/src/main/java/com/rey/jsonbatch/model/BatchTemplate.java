@@ -6,7 +6,7 @@ public class BatchTemplate {
 
     private List<RequestTemplate> requests;
 
-    private ResponseTemplate response;
+    private List<ResponseTemplate> responses;
 
     public List<RequestTemplate> getRequests() {
         return requests;
@@ -16,11 +16,11 @@ public class BatchTemplate {
         this.requests = requests;
     }
 
-    public ResponseTemplate getResponse() {
-        return response;
+    public List<ResponseTemplate> getResponses() {
+        return responses;
     }
 
-    public void setResponse(ResponseTemplate response) {
-        this.response = response;
+    public void setResponses(List<ResponseTemplate> responses) {
+        this.responses = responses;
     }
 }

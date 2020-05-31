@@ -60,7 +60,7 @@ class BatchEngineTest {
                         }
                     }
                 ],
-                "response": null
+                "responses": null
             }
         """.trimIndent()
         val original_request = """
@@ -119,15 +119,17 @@ class BatchEngineTest {
                         }
                     }
                 ],
-                "response": {
-                    "headers": {
-                        "header": "str $.responses[0].headers.header_1"
-                    },
-                    "body": {
-                        "keys": "str[] $.responses[0].body[*].key",
-                        "sum_value": "int __sum(\"$.responses[0].body[*].value\")"
+                "responses": [
+                    {
+                        "headers": {
+                            "header": "str $.responses[0].headers.header_1"
+                        },
+                        "body": {
+                            "keys": "str[] $.responses[0].body[*].key",
+                            "sum_value": "int __sum(\"$.responses[0].body[*].value\")"
+                        }
                     }
-                }
+                ]
             }
         """.trimIndent()
         val original_request = """

@@ -45,6 +45,26 @@ public class MathUtils {
         return null;
     }
 
+    public static Boolean toBoolean(Object value) {
+        if (value instanceof Boolean)
+            return (Boolean)value;
+        if (value instanceof Integer)
+            return !value.equals(0);
+        if (value instanceof Long)
+            return !value.equals(0L);
+        if (value instanceof Float)
+            return !value.equals(0F);
+        if (value instanceof Double)
+            return !value.equals(0D);
+        if (value instanceof BigInteger)
+            return !value.equals(BigInteger.ZERO);
+        if (value instanceof BigDecimal)
+            return !value.equals(BigDecimal.ZERO);
+        if (value instanceof String)
+            return ((String) value).equalsIgnoreCase("true");
+        return null;
+    }
+
     public static BigInteger min(BigInteger a, BigInteger b) {
         if(a == null)
             return b;

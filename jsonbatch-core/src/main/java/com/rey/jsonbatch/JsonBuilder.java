@@ -233,20 +233,12 @@ public class JsonBuilder {
                     throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
                 return result;
             }
-            case BOOLEAN:
-                if (object instanceof Boolean)
-                    return object;
-                if (object instanceof Integer)
-                    return !object.equals(0);
-                if (object instanceof Long)
-                    return !object.equals(0L);
-                if (object instanceof Float)
-                    return !object.equals(0F);
-                if (object instanceof Double)
-                    return !object.equals(0D);
-                if (object instanceof String)
-                    return ((String) object).equalsIgnoreCase("true");
-                throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to boolean");
+            case BOOLEAN: {
+                Boolean result = MathUtils.toBoolean(object);
+                if (result == null)
+                    throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to boolean");
+                return result;
+            }
         }
         return object;
     }

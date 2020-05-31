@@ -1,5 +1,7 @@
 package com.rey.jsonbatch.apachehttpclient
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.jayway.jsonpath.Configuration
@@ -16,6 +18,7 @@ import com.rey.jsonbatch.model.Request
 import org.apache.http.impl.client.HttpClients
 import org.junit.Before
 import org.junit.Test
+import org.slf4j.LoggerFactory
 
 class BatchEngineTest {
 
@@ -25,6 +28,9 @@ class BatchEngineTest {
 
     @Before
     fun setUp() {
+        val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
+        root.level = Level.DEBUG
+
         objectMapper = ObjectMapper()
         objectMapper.propertyNamingStrategy = PropertyNamingStrategy.SNAKE_CASE
         val conf = Configuration.builder()
@@ -49,37 +55,43 @@ class BatchEngineTest {
                         "headers": {
                             "Accept": "str application/json, */*"
                         },
-                        "body": null
-                    },
-                    {
-                        "http_method": "GET",
-                        "url": "https://jsonplaceholder.typicode.com/posts/@{$.responses[0].body[0].id}@",
-                        "headers": {
-                            "Accept": "str application/json, */*"
-                        },
-                        "body": null
-                    },
-                    {
-                        "http_method": "POST",
-                        "url": "https://jsonplaceholder.typicode.com/posts",
-                        "headers": {
-                            "Content-type": "str application/json; charset=UTF-8"
-                        },
-                        "body": {
-                            "title": "str A new post",
-                            "userId": "int $.responses[1].body.userId",
-                            "body": "str $.responses[1].body.body"
-                        }
+                        "body": null,
+                        "requests": [
+                            {
+                                "http_method": "GET",
+                                "url": "https://jsonplaceholder.typicode.com/posts/@{$.responses[0].body[0].id}@",
+                                "headers": {
+                                    "Accept": "str application/json, */*"
+                                },
+                                "body": null,
+                                "requests": [
+                                    {
+                                        "http_method": "POST",
+                                        "url": "https://jsonplaceholder.typicode.com/posts",
+                                        "headers": {
+                                            "Content-type": "str application/json; charset=UTF-8"
+                                        },
+                                        "body": {
+                                            "title": "str A new post",
+                                            "userId": "int $.responses[1].body.userId",
+                                            "body": "str $.responses[1].body.body"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ],
-                "response": {
-                    "status": "$.responses[2].status",
-                    "headers": null,
-                    "body": {
-                        "first_post": "obj $.responses[1].body",
-                        "new_post": "obj $.responses[2].body"
+                "responses": [
+                    {
+                        "status": "$.responses[2].status",
+                        "headers": null,
+                        "body": {
+                            "first_post": "obj $.responses[1].body",
+                            "new_post": "obj $.responses[2].body"
+                        }
                     }
-                }
+                ]
             }
         """.trimIndent()
         val original_request = """

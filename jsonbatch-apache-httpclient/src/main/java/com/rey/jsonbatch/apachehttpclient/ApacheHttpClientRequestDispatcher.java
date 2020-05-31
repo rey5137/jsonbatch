@@ -1,6 +1,7 @@
 package com.rey.jsonbatch.apachehttpclient;
 
 import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.rey.jsonbatch.BatchEngine;
 import com.rey.jsonbatch.RequestDispatcher;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.Response;
@@ -9,6 +10,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.StringEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
+
+    private Logger logger = LoggerFactory.getLogger(ApacheHttpClientRequestDispatcher.class);
 
     private HttpClient httpClient;
 
@@ -28,9 +33,11 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
     public Response dispatch(Request request, JsonProvider jsonProvider) throws IOException {
         RequestBuilder requestBuilder = RequestBuilder.create(request.getHttpMethod().toUpperCase());
         requestBuilder.setUri(request.getUrl());
+        logger.debug("Request {}: {}", request.getHttpMethod(), request.getUrl());
         request.getHeaders().forEach((key, values) -> values.forEach(value -> requestBuilder.addHeader(key, value)));
         if(request.getBody() != null) {
             String json = jsonProvider.toJson(request.getBody());
+            logger.debug("Request body: {}", json);
             requestBuilder.setEntity(new StringEntity(json));
         }
         HttpResponse httpResponse = httpClient.execute(requestBuilder.build());
@@ -39,6 +46,7 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
         for(Header header : httpResponse.getAllHeaders()) {
             headerMap.computeIfAbsent(header.getName(), key -> new ArrayList<>()).add(header.getValue());
         }
+
         response.setStatus(httpResponse.getStatusLine().getStatusCode());
         response.setHeaders(headerMap);
         Header contentEncodingHeader = httpResponse.getEntity().getContentEncoding();
