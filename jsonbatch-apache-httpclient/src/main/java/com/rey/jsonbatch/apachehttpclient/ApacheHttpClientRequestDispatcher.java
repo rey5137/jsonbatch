@@ -50,7 +50,12 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
         response.setStatus(httpResponse.getStatusLine().getStatusCode());
         response.setHeaders(headerMap);
         Header contentEncodingHeader = httpResponse.getEntity().getContentEncoding();
-        response.setBody(jsonProvider.parse(httpResponse.getEntity().getContent(), contentEncodingHeader == null ? "UTF-8" : contentEncodingHeader.getValue()));
+        try {
+            response.setBody(jsonProvider.parse(httpResponse.getEntity().getContent(), contentEncodingHeader == null ? "UTF-8" : contentEncodingHeader.getValue()));
+        }
+        catch (Exception ex) {
+            logger.warn("Cannot convert response body as JSON", ex);
+        }
         return response;
     }
 

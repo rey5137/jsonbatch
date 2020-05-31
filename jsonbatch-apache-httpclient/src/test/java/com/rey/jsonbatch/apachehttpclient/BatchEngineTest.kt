@@ -9,10 +9,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.rey.jsonbatch.BatchEngine
 import com.rey.jsonbatch.JsonBuilder
-import com.rey.jsonbatch.function.AverageFunction
-import com.rey.jsonbatch.function.MaxFunction
-import com.rey.jsonbatch.function.MinFunction
-import com.rey.jsonbatch.function.SumFunction
+import com.rey.jsonbatch.function.*
 import com.rey.jsonbatch.model.BatchTemplate
 import com.rey.jsonbatch.model.Request
 import org.apache.http.impl.client.HttpClients
@@ -40,7 +37,10 @@ class BatchEngineTest {
         val jsonBuilder = JsonBuilder(SumFunction.instance(),
                 AverageFunction.instance(),
                 MinFunction.instance(),
-                MaxFunction.instance())
+                MaxFunction.instance(),
+                AndFunction.instance(),
+                OrFunction.instance(),
+                CompareFunction.instance())
         batchEngine = BatchEngine(conf, jsonBuilder, ApacheHttpClientRequestDispatcher(HttpClients.createDefault()))
     }
     
@@ -75,7 +75,18 @@ class BatchEngineTest {
                                             "title": "str A new post",
                                             "userId": "int $.responses[1].body.userId",
                                             "body": "str $.responses[1].body.body"
-                                        }
+                                        },
+                                        "responses": [
+                                            {
+                                                "predicate": "__compare(\"@{$.responses[2].status}@ != 201\")",
+                                                "status": "$.responses[2].status",
+                                                "headers": null,
+                                                "body": {
+                                                    "first_post": "obj $.responses[1].body",
+                                                    "new_post": "Error"
+                                                }
+                                            }
+                                        ]
                                     }
                                 ]
                             }
