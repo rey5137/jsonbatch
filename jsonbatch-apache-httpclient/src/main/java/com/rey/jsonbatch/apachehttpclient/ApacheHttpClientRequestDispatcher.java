@@ -39,6 +39,7 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
         for(Header header : httpResponse.getAllHeaders()) {
             headerMap.computeIfAbsent(header.getName(), key -> new ArrayList<>()).add(header.getValue());
         }
+        response.setStatus(httpResponse.getStatusLine().getStatusCode());
         response.setHeaders(headerMap);
         Header contentEncodingHeader = httpResponse.getEntity().getContentEncoding();
         response.setBody(jsonProvider.parse(httpResponse.getEntity().getContent(), contentEncodingHeader == null ? "UTF-8" : contentEncodingHeader.getValue()));

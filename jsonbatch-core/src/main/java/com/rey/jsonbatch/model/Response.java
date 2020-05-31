@@ -6,9 +6,19 @@ import java.util.Map;
 
 public class Response {
 
+    private Integer status;
+
     private Map<String, List<String>> headers;
 
     private Object body;
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
 
     public Map<String, List<String>> getHeaders() {
         return headers;
@@ -28,6 +38,7 @@ public class Response {
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("status", status);
         map.put("headers", headers);
         map.put("body", body);
         return map;

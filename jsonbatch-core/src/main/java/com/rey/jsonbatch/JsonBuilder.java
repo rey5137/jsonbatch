@@ -3,6 +3,7 @@ package com.rey.jsonbatch;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.rey.jsonbatch.function.Function;
+import com.rey.jsonbatch.function.MathUtils;
 import com.rey.jsonbatch.parser.Parser;
 import com.rey.jsonbatch.parser.Token;
 import com.rey.jsonbatch.parser.TokenValue;
@@ -37,7 +38,7 @@ public class JsonBuilder {
     private Parser parser = new Parser();
 
     public JsonBuilder(Function... functions) {
-        for(Function f :  functions)
+        for (Function f : functions)
             functionMap.put(f.getName(), f);
     }
 
@@ -56,22 +57,22 @@ public class JsonBuilder {
     private Object buildNode(String schema, DocumentContext context) {
         Type type = null;
         List<TokenValue> tokenValues = null;
-        for(Type t : Type.values()) {
-            for(String value : t.values) {
-                if(schema.startsWith(value)) {
+        for (Type t : Type.values()) {
+            for (String value : t.values) {
+                if (schema.startsWith(value)) {
                     type = t;
                     tokenValues = parser.parse(schema.substring(value.length()).trim());
                     break;
                 }
             }
         }
-        if(type == null)
+        if (type == null)
             tokenValues = parser.parse(schema.trim());
 
         TokenValue firstToken = tokenValues.get(0);
-        if(firstToken.getToken() == Token.JSON_PATH)
+        if (firstToken.getToken() == Token.JSON_PATH)
             return buildNodeFromJsonPath(type, context, firstToken.getValue());
-        else if(firstToken.getToken() == Token.FUNC){
+        else if (firstToken.getToken() == Token.FUNC) {
             return buildNodeFromFunction(type, tokenValues, context);
         }
 
@@ -99,7 +100,7 @@ public class JsonBuilder {
         for (Map<String, Object> childSchema : (Iterable<Map<String, Object>>) schema) {
             logger.info("Build items with schema: {}", childSchema);
             String arrayPath = (String) childSchema.get(KEY_ARRAY_PATH);
-            if(arrayPath == null) {
+            if (arrayPath == null) {
                 logger.error("Missing array path in child schema");
                 throw new IllegalArgumentException("Missing array path in child schema");
             }
@@ -116,7 +117,7 @@ public class JsonBuilder {
         Object object = context.read(jsonPath);
         if (object == null)
             return null;
-        if(type == null)
+        if (type == null)
             return object;
         if (!type.isArray) {
             if (object instanceof List) {
@@ -139,11 +140,11 @@ public class JsonBuilder {
         final String funcName = tokenValue.getValue();
         logger.trace("build Node with [{}] function to [{}] type", funcName, type);
         Function function = functionMap.get(funcName);
-        if(function == null) {
+        if (function == null) {
             logger.error("Unsupported function: {}", funcName);
             throw new IllegalArgumentException("Not support function: " + funcName);
         }
-        if(function.isReduceFunction()) {
+        if (function.isReduceFunction()) {
             Function.Result result = null;
             while (!tokenValues.isEmpty()) {
                 tokenValue = tokenValues.get(0);
@@ -158,12 +159,11 @@ public class JsonBuilder {
                     break;
                 tokenValues.remove(0);
                 result = function.handle(type, argument, result);
-                if(result != null && result.isDone())
+                if (result != null && result.isDone())
                     return result.getValue();
             }
             return result == null ? null : result.getValue();
-        }
-        else {
+        } else {
             List<Object> arguments = new ArrayList<>();
             while (!tokenValues.isEmpty()) {
                 tokenValue = tokenValues.get(0);
@@ -182,23 +182,20 @@ public class JsonBuilder {
     }
 
     private Object parseRawData(String rawData, DocumentContext context) {
-        if(rawData.contains(".")) {
+        if (rawData.contains(".")) {
             try {
                 return new BigDecimal(rawData);
-            }
-            catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex) {
                 logger.trace("Cannot parse [{}] as decimal", rawData);
             }
-        }
-        else {
+        } else {
             try {
                 return new BigInteger(rawData);
-            }
-            catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex) {
                 logger.trace("Cannot parse [{}] as integer", rawData);
             }
         }
-        if(rawData.equalsIgnoreCase("true") || rawData.equalsIgnoreCase("false")) {
+        if (rawData.equalsIgnoreCase("true") || rawData.equalsIgnoreCase("false")) {
             return rawData.equalsIgnoreCase("true");
         }
         return buildStringFromRawData(rawData, context);
@@ -206,7 +203,7 @@ public class JsonBuilder {
 
     private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {
         logger.trace("build Node with [{}] rawData to [{}] type", rawData, type);
-        if(type == null)
+        if (type == null)
             return buildStringFromRawData(rawData, context);
         switch (type) {
             case STRING:
@@ -224,18 +221,18 @@ public class JsonBuilder {
         switch (type) {
             case STRING:
                 return object.toString();
-            case INTEGER:
-                if (object instanceof String || object instanceof Integer || object instanceof Long)
-                    return Long.parseLong(object.toString());
-                if (object instanceof Float)
-                    return Math.round((float) object);
-                if (object instanceof Double)
-                    return Math.round((double) object);
-                throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
-            case NUMBER:
-                if (object instanceof String || object instanceof Integer || object instanceof Long || object instanceof Float || object instanceof Double)
-                    return new BigDecimal(object.toString());
-                throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
+            case INTEGER: {
+                BigInteger result = MathUtils.toBigInteger(object);
+                if (result == null)
+                    throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
+                return result;
+            }
+            case NUMBER: {
+                BigDecimal result = MathUtils.toBigDecimal(object);
+                if (result == null)
+                    throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
+                return result;
+            }
             case BOOLEAN:
                 if (object instanceof Boolean)
                     return object;

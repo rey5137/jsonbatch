@@ -3,6 +3,7 @@ package com.rey.jsonbatch;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.rey.jsonbatch.function.MathUtils;
 import com.rey.jsonbatch.model.BatchTemplate;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
@@ -89,12 +90,14 @@ public class BatchEngine {
 
     private Response buildResponse(ResponseTemplate template, DocumentContext context) {
         Response response = new Response();
-        if(template.getBody() != null) {
+        if(template.getStatus() != null)
+            response.setStatus(MathUtils.toInteger(jsonBuilder.build(template.getStatus(), context)));
+        else
+            response.setStatus(200);
+        if(template.getBody() != null)
             response.setBody(jsonBuilder.build(template.getBody(), context));
-        }
-        if(template.getHeaders() != null) {
+        if(template.getHeaders() != null)
             response.setHeaders(buildHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context)));
-        }
         return response;
     }
 

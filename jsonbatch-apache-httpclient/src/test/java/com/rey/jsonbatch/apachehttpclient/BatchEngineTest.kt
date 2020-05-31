@@ -73,6 +73,7 @@ class BatchEngineTest {
                     }
                 ],
                 "response": {
+                    "status": "$.responses[2].status",
                     "headers": null,
                     "body": {
                         "first_post": "obj $.responses[1].body",
