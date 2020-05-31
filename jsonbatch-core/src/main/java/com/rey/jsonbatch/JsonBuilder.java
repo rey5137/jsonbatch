@@ -146,7 +146,7 @@ public class JsonBuilder {
         if(function.isReduceFunction()) {
             Function.Result result = null;
             while (!tokenValues.isEmpty()) {
-                tokenValue = tokenValues.remove(0);
+                tokenValue = tokenValues.get(0);
                 Object argument = null;
                 if (tokenValue.getToken() == Token.JSON_PATH)
                     argument = context.read(tokenValue.getValue());
@@ -156,6 +156,7 @@ public class JsonBuilder {
                     argument = parseRawData(tokenValue.getValue(), context);
                 else if (tokenValue.getToken() == Token.END_FUNC)
                     break;
+                tokenValues.remove(0);
                 result = function.handle(type, argument, result);
                 if(result != null && result.isDone())
                     return result.getValue();
@@ -165,7 +166,7 @@ public class JsonBuilder {
         else {
             List<Object> arguments = new ArrayList<>();
             while (!tokenValues.isEmpty()) {
-                tokenValue = tokenValues.remove(0);
+                tokenValue = tokenValues.get(0);
                 if (tokenValue.getToken() == Token.JSON_PATH)
                     arguments.add(context.read(tokenValue.getValue()));
                 else if (tokenValue.getToken() == Token.FUNC)
@@ -174,6 +175,7 @@ public class JsonBuilder {
                     arguments.add(parseRawData(tokenValue.getValue(), context));
                 else if (tokenValue.getToken() == Token.END_FUNC)
                     break;
+                tokenValues.remove(0);
             }
             return function.invoke(type, arguments);
         }

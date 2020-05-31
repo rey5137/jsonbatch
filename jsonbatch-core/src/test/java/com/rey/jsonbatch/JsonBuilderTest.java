@@ -6,13 +6,19 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.rey.jsonbatch.function.AndFunction;
 import com.rey.jsonbatch.function.AverageFunction;
+import com.rey.jsonbatch.function.CompareFunction;
 import com.rey.jsonbatch.function.MaxFunction;
 import com.rey.jsonbatch.function.MinFunction;
+import com.rey.jsonbatch.function.OrFunction;
 import com.rey.jsonbatch.function.RegexFunction;
 import com.rey.jsonbatch.function.SumFunction;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -33,6 +39,9 @@ public class JsonBuilderTest {
 
     @Before
     public void setUp() throws Exception {
+        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.TRACE);
+
         ObjectMapper objectMapper = new ObjectMapper();
         Configuration conf = Configuration.builder()
                 .jsonProvider(new JacksonJsonProvider(objectMapper))
@@ -42,7 +51,10 @@ public class JsonBuilderTest {
                 AverageFunction.instance(),
                 MinFunction.instance(),
                 MaxFunction.instance(),
-                RegexFunction.instance());
+                RegexFunction.instance(),
+                AndFunction.instance(),
+                OrFunction.instance(),
+                CompareFunction.instance());
         String data = objectMapper.writeValueAsString(buildData());
         documentContext = JsonPath.using(conf).parse(data);
     }
@@ -211,6 +223,20 @@ public class JsonBuilderTest {
         String schema = "str __regex(\"$[0].first\", \"^str(\\\\d)$\", 1)";
         Object result = jsonBuilder.build(schema, documentContext);
         assertEquals("1", result);
+    }
+
+    @Test
+    public void buildNode__compareFunction__decimalValue() {
+        String schema = "__compare(\"@{$[0].third}@ > @{$[1].third}@\")";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals(false, result);
+    }
+
+    @Test
+    public void buildNode__andFunction__decimalValue() {
+        String schema = "__and(__compare(\"@{$[0].third}@ <= @{$[1].third}@\"), __compare(\"@{$[0].fourth}@ == true\"))";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals(true, result);
     }
 
     @Test
