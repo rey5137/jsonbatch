@@ -53,7 +53,7 @@ class BatchEngineTest {
                     },
                     {
                         "http_method": "GET",
-                        "url": "https://jsonplaceholder.typicode.com/posts/@{int $.responses[0].body[0].id}@",
+                        "url": "https://jsonplaceholder.typicode.com/posts/@{$.responses[0].body[0].id}@",
                         "headers": {
                             "Accept": "str application/json, */*"
                         },

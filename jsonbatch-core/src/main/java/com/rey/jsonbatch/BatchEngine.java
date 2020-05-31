@@ -74,8 +74,8 @@ public class BatchEngine {
 
     private Request buildRequest(RequestTemplate template, DocumentContext context) {
         Request request = new Request();
-        request.setHttpMethod(template.getHttpMethod());
-        request.setUrl(buildURL(template.getUrl(), context));
+        request.setHttpMethod(jsonBuilder.build(template.getHttpMethod(), context).toString());
+        request.setUrl(jsonBuilder.build(template.getUrl(), context).toString());
         if(template.getBody() != null) {
             request.setBody(jsonBuilder.build(template.getBody(), context));
         }
@@ -99,10 +99,6 @@ public class BatchEngine {
         if(template.getHeaders() != null)
             response.setHeaders(buildHeaders((Map<String, Object>)jsonBuilder.build(template.getHeaders(), context)));
         return response;
-    }
-
-    private String buildURL(String template, DocumentContext context) {
-       return (String)jsonBuilder.build("str " + template, context);
     }
 
     private Map<String, List<String>> buildHeaders(Map<String, Object> values) {
