@@ -6,10 +6,7 @@ import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.json.JsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
-import com.rey.jsonbatch.function.AverageFunction
-import com.rey.jsonbatch.function.MaxFunction
-import com.rey.jsonbatch.function.MinFunction
-import com.rey.jsonbatch.function.SumFunction
+import com.rey.jsonbatch.function.*
 import com.rey.jsonbatch.model.BatchTemplate
 import com.rey.jsonbatch.model.DispatchOptions
 import com.rey.jsonbatch.model.Request
@@ -36,10 +33,7 @@ class BatchEngineTest {
                 .jsonProvider(JacksonJsonProvider(objectMapper))
                 .mappingProvider(JacksonMappingProvider(objectMapper))
                 .build()
-        val jsonBuilder = JsonBuilder(SumFunction.instance(),
-                AverageFunction.instance(),
-                MinFunction.instance(),
-                MaxFunction.instance())
+        val jsonBuilder = JsonBuilder(*Functions.basic())
         requestDispatcherMock = mock(RequestDispatcher::class.java)
         batchEngine = BatchEngine(conf, jsonBuilder, requestDispatcherMock)
     }

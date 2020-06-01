@@ -34,13 +34,7 @@ class BatchEngineTest {
                 .jsonProvider(JacksonJsonProvider(objectMapper))
                 .mappingProvider(JacksonMappingProvider(objectMapper))
                 .build()
-        val jsonBuilder = JsonBuilder(SumFunction.instance(),
-                AverageFunction.instance(),
-                MinFunction.instance(),
-                MaxFunction.instance(),
-                AndFunction.instance(),
-                OrFunction.instance(),
-                CompareFunction.instance())
+        val jsonBuilder = JsonBuilder(*Functions.basic())
         batchEngine = BatchEngine(conf, jsonBuilder, ApacheHttpClientRequestDispatcher(HttpClients.createDefault()))
     }
     
@@ -102,7 +96,11 @@ class BatchEngineTest {
                             "new_post": "obj $.responses[2].body"
                         }
                     }
-                ]
+                ],
+                "dispatch_options": {
+                    "fail_back_as_string": true,
+                    "ignore_parsing_error": true
+                }
             }
         """.trimIndent()
         val original_request = """
