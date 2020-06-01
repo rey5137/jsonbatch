@@ -4,6 +4,8 @@ import com.rey.jsonbatch.JsonBuilder.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+
 @SuppressWarnings("unchecked")
 public class AndFunction extends Function {
 
@@ -27,8 +29,29 @@ public class AndFunction extends Function {
             result.isDone = !result.value;
             return result;
         }
+        else if(argument instanceof Collection) {
+            result.value = isTrue((Collection) argument);
+            result.isDone = !result.value;
+            return result;
+        }
         logger.error("Cannot process [{}] type", argument.getClass());
         throw new IllegalArgumentException("Cannot process item");
+    }
+
+    private Boolean isTrue(Collection<Object> items) {
+        for(Object item : items) {
+            if(item instanceof Boolean) {
+                if(!(Boolean)item)
+                    return false;
+            }
+            else if(item instanceof Collection) {
+                if(!isTrue((Collection)item))
+                    return false;
+            }
+            else
+                logger.error("Cannot process [{}] type", item.getClass());
+        }
+        return true;
     }
 
     public static AndFunction instance() {

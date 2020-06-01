@@ -227,14 +227,14 @@ public class JsonBuilderTest {
 
     @Test
     public void buildNode__compareFunction__decimalValue() {
-        String schema = "__compare(\"@{$[0].third}@ > @{$[1].third}@\")";
+        String schema = "__cmp(\"@{$[0].third}@ > @{$[1].third}@\")";
         Object result = jsonBuilder.build(schema, documentContext);
         assertEquals(false, result);
     }
 
     @Test
     public void buildNode__andFunction__decimalValue() {
-        String schema = "__and(__compare(\"@{$[0].third}@ <= @{$[1].third}@\"), __compare(\"@{$[0].fourth}@ == true\"))";
+        String schema = "__and(__cmp(\"@{$[0].third}@ <= @{$[1].third}@\"), __cmp(\"@{$[0].fourth}@ == true\"))";
         Object result = jsonBuilder.build(schema, documentContext);
         assertEquals(true, result);
     }

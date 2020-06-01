@@ -11,6 +11,7 @@ import com.rey.jsonbatch.function.MaxFunction
 import com.rey.jsonbatch.function.MinFunction
 import com.rey.jsonbatch.function.SumFunction
 import com.rey.jsonbatch.model.BatchTemplate
+import com.rey.jsonbatch.model.DispatchOptions
 import com.rey.jsonbatch.model.Request
 import com.rey.jsonbatch.model.Response
 import org.junit.Before
@@ -97,7 +98,7 @@ class BatchEngineTest {
         val originalRequest = objectMapper.readValue(original_request, Request::class.java)
         val firstResponse = objectMapper.readValue(response, Response::class.java)
 
-        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java));
+        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java));
         val finalResponse = batchEngine.execute(originalRequest, batchTemplate)
         println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
     }
@@ -166,7 +167,7 @@ class BatchEngineTest {
         val originalRequest = objectMapper.readValue(original_request, Request::class.java)
         val firstResponse = objectMapper.readValue(response, Response::class.java)
 
-        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java));
+        doReturn(firstResponse).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java));
         val finalResponse = batchEngine.execute(originalRequest, batchTemplate)
         println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
     }

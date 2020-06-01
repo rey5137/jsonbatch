@@ -2,6 +2,8 @@ package com.rey.jsonbatch.function;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertEquals;
 
 public class OrFunctionTest {
@@ -28,6 +30,18 @@ public class OrFunctionTest {
                 function.handle(null, false, null));
         assertEquals(true, result.value);
         assertEquals(true, result.isDone);
+    }
+
+    @Test
+    public void handle__listArgument() {
+        Function.Result<Boolean> result = function.handle(null, Arrays.asList(false, true), null);
+        assertEquals(true, result.value);
+
+        result = function.handle(null, Arrays.asList(false, false), null);
+        assertEquals(false, result.value);
+
+        result = function.handle(null, Arrays.asList(false, Arrays.asList(false, true)), null);
+        assertEquals(true, result.value);
     }
 
 }
