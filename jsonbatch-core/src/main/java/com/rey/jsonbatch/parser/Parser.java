@@ -89,12 +89,9 @@ public class Parser {
         }
         if(i < str.length()) {
             String value = builder.toString();
-            str = str.substring(i + 1).trim();
-            if(value.startsWith(PREFIX_JSON_PATH))
-                values.add(TokenValue.of(Token.JSON_PATH, value.trim()));
-            else
-                values.add(TokenValue.of(Token.RAW, value));
-            return str;
+            Token token = str.startsWith(PREFIX_JSON_PATH) ? Token.JSON_PATH : Token.RAW;
+            values.add(TokenValue.of(token, token == Token.JSON_PATH ? value.trim() : value));
+            return str.substring(i + 1).trim();
         }
         throw new IllegalArgumentException(("Expect '\"' character but not found"));
     }
@@ -109,8 +106,7 @@ public class Parser {
         if(i < str.length()) {
             String value = str.substring(0, i).trim();
             values.add(TokenValue.of(Token.RAW, value));
-            str = str.substring(i).trim();
-            return str;
+            return str.substring(i).trim();
         }
         throw new IllegalArgumentException(("Expect ',' or ')' character but not found"));
     }

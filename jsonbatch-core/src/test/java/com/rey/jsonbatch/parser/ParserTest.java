@@ -48,4 +48,13 @@ public class ParserTest {
                 of(Token.END_FUNC));
     }
 
+    @Test
+    public void parse__function__escapedJsonPath() {
+        List<TokenValue> values = parser.parse("__sum(\"\\$.body.key\")");
+        assertArray(values,
+                of(Token.FUNC, "sum"),
+                of(Token.RAW, "$.body.key"),
+                of(Token.END_FUNC));
+    }
+
 }
