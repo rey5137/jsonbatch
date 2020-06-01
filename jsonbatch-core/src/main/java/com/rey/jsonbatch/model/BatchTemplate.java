@@ -8,6 +8,8 @@ public class BatchTemplate {
 
     private List<ResponseTemplate> responses;
 
+    private DispatchOptions dispatchOptions;
+
     public List<RequestTemplate> getRequests() {
         return requests;
     }
@@ -22,5 +24,13 @@ public class BatchTemplate {
 
     public void setResponses(List<ResponseTemplate> responses) {
         this.responses = responses;
+    }
+
+    public DispatchOptions getDispatchOptions() {
+        return dispatchOptions;
+    }
+
+    public void setDispatchOptions(DispatchOptions dispatchOptions) {
+        this.dispatchOptions = dispatchOptions;
     }
 }

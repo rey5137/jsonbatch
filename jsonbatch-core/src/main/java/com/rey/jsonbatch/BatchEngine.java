@@ -44,7 +44,7 @@ public class BatchEngine {
         this.requestDispatcher = requestDispatcher;
     }
 
-    public Response execute(Request originalRequest, BatchTemplate template) throws IOException {
+    public Response execute(Request originalRequest, BatchTemplate template) throws Exception {
         logger.info("Start executing batch with [{}] original request", originalRequest);
         Map<String, Object> batchResponse = new LinkedHashMap<>();
         batchResponse.put(KEY_ORIGINAL, originalRequest.toMap());
@@ -58,7 +58,7 @@ public class BatchEngine {
             logger.info("Preparing request with [{}] index", count);
             Request request = buildRequest(requestTemplate, context);
             logger.info("Dispatching request with [{}] index", count);
-            Response response = requestDispatcher.dispatch(request, configuration.jsonProvider());
+            Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
             logger.info("Received response with [{}] status", response.getStatus());
             ((List)batchResponse.get(KEY_REQUESTS)).add(request.toMap());
             ((List)batchResponse.get(KEY_RESPONSES)).add(response.toMap());
