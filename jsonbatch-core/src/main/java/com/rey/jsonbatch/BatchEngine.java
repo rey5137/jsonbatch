@@ -5,6 +5,7 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.rey.jsonbatch.function.MathUtils;
 import com.rey.jsonbatch.model.BatchTemplate;
+import com.rey.jsonbatch.model.DispatchOptions;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
 import com.rey.jsonbatch.model.Response;
@@ -51,6 +52,8 @@ public class BatchEngine {
         batchResponse.put(KEY_REQUESTS, new ArrayList<>());
         batchResponse.put(KEY_RESPONSES, new ArrayList<>());
         DocumentContext context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
+        if(template.getDispatchOptions() == null)
+            template.setDispatchOptions(new DispatchOptions());
 
         RequestTemplate requestTemplate = chooseRequestTemplate(template.getRequests(), context);
         int count = 0;

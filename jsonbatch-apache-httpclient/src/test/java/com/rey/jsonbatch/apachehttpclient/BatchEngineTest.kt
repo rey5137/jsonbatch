@@ -78,7 +78,7 @@ class BatchEngineTest {
                                         },
                                         "responses": [
                                             {
-                                                "predicate": "__compare(\"@{$.responses[2].status}@ != 201\")",
+                                                "predicate": "__cmp(\"@{$.responses[2].status}@ != 201\")",
                                                 "status": "$.responses[2].status",
                                                 "headers": null,
                                                 "body": {
@@ -146,7 +146,7 @@ class BatchEngineTest {
                                         "body": null,
                                         "responses": [
                                             {
-                                                "predicate": "__compare(\"@{$.responses[2].status}@ != 201\")",
+                                                "predicate": "__cmp(\"@{$.responses[2].status}@ != 201\")",
                                                 "status": "$.responses[2].status",
                                                 "headers": null,
                                                 "body": {

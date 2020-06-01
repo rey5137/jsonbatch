@@ -17,7 +17,7 @@ public class CompareFunction extends Function {
     private static final String PATTERN_COMPARISON = "(<=|>=|==|!=|>|<)";
     @Override
     public String getName() {
-        return "compare";
+        return "cmp";
     }
 
     @Override
