@@ -88,8 +88,8 @@ public class JsonBuilder {
                     result.put(key, buildNode((String) childSchema, context));
                 if (childSchema instanceof Map)
                     result.put(key, buildObject((Map) childSchema, context));
-                if (childSchema instanceof List)
-                    result.put(key, buildList((List) childSchema, context));
+                if (childSchema instanceof Collection)
+                    result.put(key, buildList((Collection) childSchema, context));
             }
         });
         return result;
@@ -97,17 +97,27 @@ public class JsonBuilder {
 
     private List buildList(Collection schema, DocumentContext context) {
         List<Object> result = new ArrayList<>();
-        for (Map<String, Object> childSchema : (Iterable<Map<String, Object>>) schema) {
+        for (Object childSchema : (Iterable<Object>) schema) {
             logger.info("Build items with schema: {}", childSchema);
-            String arrayPath = (String) childSchema.get(KEY_ARRAY_PATH);
-            if (arrayPath == null) {
-                logger.error("Missing array path in child schema");
-                throw new IllegalArgumentException("Missing array path in child schema");
+            if (childSchema instanceof String) {
+                Object item = build(childSchema, context);
+                if (item instanceof Collection)
+                    result.addAll((Collection) item);
+                else
+                    result.add(item);
+            } else if (childSchema instanceof Map) {
+                String arrayPath = (String) ((Map)childSchema).get(KEY_ARRAY_PATH);
+                if (arrayPath == null) {
+                    logger.error("Missing array path in child schema");
+                    throw new IllegalArgumentException("Missing array path in child schema");
+                }
+                List<Object> items = context.read(arrayPath);
+                result.addAll(items.stream()
+                        .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
+                        .collect(Collectors.toList()));
+            } else if(childSchema instanceof Collection) {
+                result.add(buildList((Collection)childSchema, context));
             }
-            List<Object> items = context.read(arrayPath);
-            result.addAll(items.stream()
-                    .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
-                    .collect(Collectors.toList()));
         }
         return result;
     }

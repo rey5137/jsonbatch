@@ -84,21 +84,21 @@ public class JsonBuilderTest {
     public void buildNode__integerType() {
         String schema = "int $[0].second";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(1L, result);
+        assertEquals(BigInteger.ONE, result);
     }
 
     @Test
     public void buildNode__integerType__fromStringValue() {
         String schema = "int $[3].fifth";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(5L, result);
+        assertEquals(new BigInteger("5"), result);
     }
 
     @Test
     public void buildNode__integerType__fromFloatValue() {
         String schema = "int $[0].third";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(2L, result);
+        assertEquals(new BigInteger("2"), result);
     }
 
     @Test
@@ -250,7 +250,7 @@ public class JsonBuilderTest {
     public void buildNode__rawInteger() {
         String schema = "int 1";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(1L, result);
+        assertEquals(new BigInteger("1"), result);
     }
 
     @Test
@@ -296,12 +296,32 @@ public class JsonBuilderTest {
 
         Map<String, Object> result = (Map<String, Object>)jsonBuilder.build(schema, documentContext);
 
-        assertEquals(2L, result.get("first"));
+        assertEquals(new BigInteger("2"), result.get("first"));
         assertArray((List)result.get("second"), "str2", "str5");
     }
 
     @Test
-    public void buildArray() {
+    public void buildArray__withStringSchema__withSingleItem() {
+        List result = (List)jsonBuilder.build(Collections.singletonList("$[0].second"), documentContext);
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.get(0));
+    }
+
+    @Test
+    public void buildArray__withStringSchema__withMultiItem() {
+        List result = (List)jsonBuilder.build(Collections.singletonList("str[] $[*].second"), documentContext);
+
+        assertEquals(5, result.size());
+        assertEquals("1", result.get(0));
+        assertEquals("2", result.get(1));
+        assertEquals("3", result.get(2));
+        assertEquals("4", result.get(3));
+        assertEquals("0", result.get(4));
+    }
+
+    @Test
+    public void buildArray__withObjectSchema() {
         Map<String, Object> childSchema = new HashMap<>();
         childSchema.put("first", "int $.second");
         childSchema.put("second", "str $.fourth");
@@ -310,16 +330,27 @@ public class JsonBuilderTest {
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
 
         assertEquals(5, result.size());
-        assertEquals(1L, result.get(0).get("first"));
+        assertEquals(new BigInteger("1"), result.get(0).get("first"));
         assertEquals("true", result.get(0).get("second"));
-        assertEquals(2L, result.get(1).get("first"));
+        assertEquals(new BigInteger("2"), result.get(1).get("first"));
         assertEquals("false", result.get(1).get("second"));
-        assertEquals(3L, result.get(2).get("first"));
+        assertEquals(new BigInteger("3"), result.get(2).get("first"));
         assertEquals(null, result.get(2).get("second"));
-        assertEquals(4L, result.get(3).get("first"));
+        assertEquals(new BigInteger("4"), result.get(3).get("first"));
         assertEquals(null, result.get(3).get("second"));
-        assertEquals(0L, result.get(4).get("first"));
+        assertEquals(new BigInteger("0"), result.get(4).get("first"));
         assertEquals("false", result.get(4).get("second"));
+    }
+
+    @Test
+    public void buildArray__withListSchema() {
+
+        List result = (List)jsonBuilder.build(Collections.singletonList(Collections.singletonList("$[0].second")), documentContext);
+
+        assertEquals(1, result.size());
+        List items = (List)result.get(0);
+        assertEquals(1, items.size());
+        assertEquals(1, items.get(0));
     }
 
     @Test
@@ -335,7 +366,7 @@ public class JsonBuilderTest {
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Arrays.asList(childSchema, secondChildSchema), documentContext);
 
         assertEquals(3, result.size());
-        assertEquals(1L, result.get(0).get("first"));
+        assertEquals(new BigInteger("1"), result.get(0).get("first"));
         assertEquals("str2", result.get(1).get("first"));
         assertEquals("str5", result.get(2).get("first"));
     }
