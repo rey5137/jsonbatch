@@ -6,8 +6,16 @@ JsonBatch
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core)
 [![Javadoc](https://www.javadoc.io/badge/com.github.rey5137/jsonbatch-core.svg)](http://www.javadoc.io/doc/com.github.rey5137/jsonbatch-core)
 
-Getting Started
----------------
+* [Getting Started](#getting-started)
+* [How it work](#how-it-work)
+* [How it build JSON](#how-it-build-json)
+* [Data type](#data-type)
+* [Function](#function)
+* [Raw data](#raw-data)
+* [Where is the data](#where-is-the-data)
+* [A real example](#a-real-example)
+
+## Getting Started
 
 JsonBatch is available at the Central Maven Repository.
 ```xml
@@ -43,8 +51,7 @@ BatchEngine has only 1 public method:
 
 By supplying the original request and a template, BatchEngine will construct & execute each request sequentially, then collect all responses and construct the final response.
 
-How it work
---------------
+## How it work
 Here is Batch template full JSON format:
 ```json
 {
@@ -91,8 +98,7 @@ When **RequestDispatcher** execute a request, you can pass options via dispatch_
 - fail_back_as_string: If RequestDispatcher cannot parse response body as JSON, it will return as String.
 - ignore_parsing_error: Ignore error when parsing response body, and return null instead.
 
-How it build JSON
----------------
+## How it build JSON
 To know how to build a json object from template, JsonBatch use a json with each value follow a specific format: 
 
 **\<data type\> <json_path or function(sum, min, max, ...) or raw_data>**
@@ -114,8 +120,7 @@ You can omit the **\<data type>** part like that:
 JsonBatch will use the type of extracted value instead of casting it.
 
 
-Data type
----------
+## Data type
 | Type                     | Description      |
 | :----------------------- | :----------------|
 | str, string              | String           |
@@ -201,8 +206,7 @@ Data type
 
 </table>
 
-Function
----------
+## Function
  Instead of extracting value from json path, we can use some function to aggregate value. 
  The syntax is: **\<data type> \_\_\<function name>(\<function arguments>)** (Note that there is prefix "\_\_" before function name).
  
@@ -219,8 +223,7 @@ Function
  | compare    | __cmp("\<expression>")   | __cmp("@{$.field_a}@ > 10")               | Compare 2 value |
  | regex      | __regex("<json_path>", "\<pattern>", \<index>)  | __regex("$.field_a", "(.*)", 1)  | Extract from string by regex pattern and group index |
  
- Raw data
- ---------
+ ## Raw data
  You can also pass raw data directly to value (in json format). Some examples:
  <table>
  <tr> <td> Template </td> <td> Result </td> </tr>
@@ -294,8 +297,7 @@ Function
  Note that, for string raw data, we can pass inline variable with format: **@{\<schema>}@**
  
   
- Where is the data
- -----------------
+ ## Where is the data
  So far we know how to build the template, next is to understand where the data that engine extract from. 
  So when BatchEngine execute a request, it will build a grand JSON that contains all original request, all the executed requests and responses.
  Below is format of this JSON:
@@ -339,8 +341,7 @@ Function
 }
 ```  
 
-A real example
---------------
+## A real example
 Below is a real BatchTemplate example that work with **https://jsonplaceholder.typicode.com** REST API.
 ```json
 {
