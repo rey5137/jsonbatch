@@ -93,7 +93,9 @@ When **RequestDispatcher** execute a request, you can pass options via dispatch_
 
 How it build JSON
 ---------------
-To know how to build a json object from template, JsonBatch use a json with each value follow a specific format: **\<data type\> <json_path or function(sum, min, max, ...) or raw_data>**
+To know how to build a json object from template, JsonBatch use a json with each value follow a specific format: 
+
+**\<data type\> <json_path or function(sum, min, max, ...) or raw_data>**
 
 For example:
 ```json
@@ -101,9 +103,9 @@ For example:
   "field_1": "int $.responses[0].body.field_a" 
 }
 ```
-The above template mean: build a json object with "field_1" is integer, and extract value from json path "$.responses[0].body.field_a"
+The above template means: build a json object with "field_1" is integer, and extract value from json path "$.responses[0].body.field_a"
 
-You can omit the \<data type> part like that:
+You can omit the **\<data type>** part like that:
 ```json
 {
   "field_1": "$.responses[0].body.field_a" 
@@ -129,20 +131,75 @@ Data type
  
  In case the actual type of value is different with wanted type, the Engine will try to convert if possible. Some examples:
  
- | Template                                         | Value            | Result             |
- | :----------------------------------------------- | :----------------|:-------------------|
- |{                                                 |                  |{                   |
- |  "field_1": "int $.responses[0].body.field_a"    | "10"             |  "field_1": 10     |
- |}                                                 |                  |}                   |
- |--------------------------------------------------|------------------|--------------------|
- |{                                                 |                  |{                   |
- |  "field_1": "int[] $.responses[0].body.field_a"  | "10"             |  "field_1": [10]   |   
- |}                                                 |                  |}                   |
- |--------------------------------------------------|------------------|--------------------|
- |{                                                 |                  |{                   |
- |  "field_1": "int $.responses[*].body.field_a"    | ["9", "10]       |  "field_1": 9      |
- |}                                                 |                  |}                   |
+<table>
+<tr> <td> Template </td> <td> Value </td> <td> Result </td> </tr>
+<tr>
+<td>
 
+```json
+{
+    "field_1": "int $.responses[0].body.field_a"
+}
+```
+
+</td>
+<td> "10" </td>
+<td>
+
+```json
+{
+    "field_1": 10
+}
+```
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```json
+{
+    "field_1": "int[] $.responses[0].body.field_a"
+}
+```
+
+</td>
+<td> "10" </td>
+<td>
+
+```json
+{
+    "field_1": [ 10 ]
+}
+```
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+```json
+{
+    "field_1": "int $.responses[*].body.field_a"
+}
+```
+
+</td>
+<td> ["9", "10"] </td>
+<td>
+
+```json
+{
+    "field_1": 9
+}
+```
+
+</td>
+</tr>
+
+</table>
 
 Function
 ---------
@@ -165,22 +222,74 @@ Function
  Raw data
  ---------
  You can also pass raw data directly to value (in json format). Some examples:
-  
- | Template                        |  Result              |
- | :------------------------------ | :------------------- |
- |{                                | {                    |
- |  "field_1": "int 1"             |   "field_1": 1       |
- |}                                | }                    |
- |-------------------------------- | -------------------- |
- |{                                | {                    |
- |  "field_1": "obj {\"key\": 1}"  |   "field_1": {       |   
- |}                                |        "key": 1      |
- |                                 |    }                 |
- |                                 | }                    |
- |---------------------------------| -------------------- |
- |{                                | {                    |
- |  "field_1": "str abc @{$.key}@" |   "field_1": "abc 1" |
- |}                                | }                    |
+ <table>
+ <tr> <td> Template </td> <td> Result </td> </tr>
+ <tr>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "int 1"
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+     "field_1": 1
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ <tr>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "obj {\"key\": 1}"
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+     "field_1": {
+        "key": 1
+     }
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ <tr>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "str abc @{$.key}@"
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "abc 1"
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ </table>
  
  Note that, for string raw data, we can pass inline variable with format: **@{\<schema>}@**
  
