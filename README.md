@@ -3,10 +3,30 @@ JsonBatch
 
 **An Engine to run batch request with JSON based REST APIs**
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core)
+[![Javadoc](https://www.javadoc.io/badge/com.github.rey5137/jsonbatch-core.svg)](http://www.javadoc.io/doc/com.github.rey5137/jsonbatch-core)
+
 Getting Started
 ---------------
 
-JsonBatch depend on Jayway JsonPath to parse json path.
+JsonBatch is available at the Central Maven Repository.
+```xml
+<dependency>
+  <groupId>com.github.rey5137</groupId>
+  <artifactId>jsonbatch-core</artifactId>
+  <version>1.1.0</version>
+</dependency>
+```
+We also need to add a sub package that implement RequestDispatcher.
+```xml
+<dependency>
+    <groupId>com.github.rey5137</groupId>
+    <artifactId>jsonbatch-apache-httpclient</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
+
+JsonBatch depends on Jayway JsonPath library to parse json path.
 
 First we have to create a BatchEngine. Below is a simple example:
 ```java
@@ -56,6 +76,7 @@ Here is Batch template full JSON format:
 }
 ```  
 By start, the Engine will loop though the **requests** list and choose the first template has predicate expression is true. 
+(if a request template has predicate field is NULL, it will always be true).
 The Engine will build request from template, pass it to **RequestDispatcher** to execute request and collect response. 
 
 After that, it will find the first matching template from the responses list of current request template. 
@@ -208,3 +229,75 @@ Function
   ]
 }
 ```  
+
+A real example
+--------------
+Below is a real BatchTemplate example that work with **https://jsonplaceholder.typicode.com** REST API.
+```json
+{
+    "requests": [
+        {
+            "http_method": "GET",
+            "url": "https://jsonplaceholder.typicode.com/posts",
+            "headers": {
+                "Accept": "str application/json, */*"
+            },
+            "body": null,
+            "requests": [
+                {
+                    "http_method": "GET",
+                    "url": "https://jsonplaceholder.typicode.com/posts/@{$.responses[0].body[0].id}@",
+                    "headers": {
+                        "Accept": "str application/json, */*"
+                    },
+                    "body": null,
+                    "requests": [
+                        {
+                            "http_method": "POST",
+                            "url": "https://jsonplaceholder.typicode.com/posts",
+                            "headers": {
+                                "Content-type": "str application/json; charset=UTF-8"
+                            },
+                            "body": {
+                                "title": "str A new post",
+                                "userId": "int $.responses[1].body.userId",
+                                "body": "str $.responses[1].body.body"
+                            },
+                            "responses": [
+                                {
+                                    "predicate": "__cmp(\"@{$.responses[2].status}@ != 201\")",
+                                    "status": "$.responses[2].status",
+                                    "headers": null,
+                                    "body": {
+                                        "first_post": "obj $.responses[1].body",
+                                        "new_post": "Error"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "responses": [
+        {
+            "status": "$.responses[2].status",
+            "headers": null,
+            "body": {
+                "first_post": "obj $.responses[1].body",
+                "new_post": "obj $.responses[2].body"
+            }
+        }
+    ],
+    "dispatch_options": {
+        "fail_back_as_string": true,
+        "ignore_parsing_error": true
+    }
+}
+```
+Let me explain this template:
+- First, it will make a GET request to **https://jsonplaceholder.typicode.com/posts** to get list of a post.
+- Then, it extract the id of the first post, then make a second GET request to **https://jsonplaceholder.typicode.com/posts/{id}** to get the post details.
+- After that, it will make a POST request to **https://jsonplaceholder.typicode.com/posts** to create a new post with userId & body are same as first post.
+- If the POST request succeed, it will return a response with both first post & new post. If not (status != 201), it will return a response with new_post = "Error". 
