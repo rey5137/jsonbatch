@@ -41,7 +41,7 @@ First we have to create a BatchEngine. Below is a simple example:
 ```java
   Configuration conf = Configuration.builder().build();
   JsonBuilder jsonBuilder = new JsonBuilder(Functions.basic());
-  RequestDispatcher requestDispatcher = new RequestDispatcher() { ... };
+  RequestDispatcher requestDispatcher = new ApacheHttpClientRequestDispatcher(HttpClients.createDefault());
   BatchEngine batchEngine = new BatchEngine(conf, jsonBuilder, requestDispatcher);
 ```
 
