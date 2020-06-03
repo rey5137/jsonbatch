@@ -433,7 +433,7 @@ public abstract class Function {
 ```
 There is 2 abstract method you will have to override:
 - **getName()**: return the unique name of your function.
-- **sReduceFunction()**: define that your function is reduce function or not. 
+- **isReduceFunction()**: define that your function is reduce function or not. 
 
 If your function is a reduce function, then you have to override the **handle()** method also. For reduce function, JsonBuilder will pass argument one by one, along with previous Result object (note that for first time it call **handle()** method, prevResult will be null)
 
