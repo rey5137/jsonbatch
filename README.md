@@ -14,6 +14,7 @@ JsonBatch
 * [Raw data](#raw-data)
 * [Where is the data](#where-is-the-data)
 * [A real example](#a-real-example)
+* [Custom function](#custom-function)
 
 ## Getting Started
 
@@ -411,3 +412,31 @@ Let me explain this template:
 - Then, it extract the id of the first post, then make a second GET request to **https://jsonplaceholder.typicode.com/posts/{id}** to get the post details.
 - After that, it will make a POST request to **https://jsonplaceholder.typicode.com/posts** to create a new post with userId & body are same as first post.
 - If the POST request succeed, it will return a response with both first post & new post. If not (status != 201), it will return a response with new_post = "Error". 
+
+## Custom function
+You can add your own custom function to JsonBuilder object. All the functions have to extend from a base class **Function**:
+```java
+public abstract class Function {
+
+    public abstract String getName();
+
+    public abstract boolean isReduceFunction();
+
+    public Object invoke(Type type, List<Object> arguments) {
+        return null;
+    }
+
+    public Result handle(Type type, Object argument, Result prevResult) {
+        return null;
+    }
+}
+```
+There is 2 abstract method you will have to override:
+- **getName()**: return the unique name of your function.
+- **sReduceFunction()**: define that your function is reduce function or not. 
+
+If your function is a reduce function, then you have to override the **handle()** method also. For reduce function, JsonBuilder will pass argument one by one, along with previous Result object (note that for first time it call **handle()** method, prevResult will be null)
+
+If your function isn't a reduce function, then have to override the **invoke()** method, and JsonBuilder will call this method only one time with all the argument list.
+
+Note that the **type** argument is the expected type of function result, and it can be null. 
