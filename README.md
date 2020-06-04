@@ -12,6 +12,7 @@ JsonBatch
 * [Data type](#data-type)
 * [Function](#function)
 * [Raw data](#raw-data)
+* [Array](#array)
 * [Where is the data](#where-is-the-data)
 * [A real example](#a-real-example)
 * [Custom function](#custom-function)
@@ -297,7 +298,163 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  Note that, for string raw data, we can pass inline variable with format: **@{\<schema>}@**
  
+ ## Array
+ There is several way you can use to build Json Array:
+ 
+- String field with array data type. The engine will try to cast all array items to expected type.
+ 
+ <table>
+ <tr> <td> Template </td> <td> Data </td> <td> Result </td> </tr>
+ 
+ <tr>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "int[] $[*].key_1"
+ }
+ ```
+ 
+ </td>
+ 
+ <td>
   
+ ```json
+[
+  {
+    "key_1": "1"
+  },
+  {
+    "key_1": "2"
+  }
+]
+ ```
+ 
+ </td>
+ 
+ <td>
+ 
+ ```json
+ {
+     "field_1": [1, 2]
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ </table>
+ 
+- Use array field with string item. The engine will extract values from each child schema and merge all into 1 array. 
+   
+ <table>
+ <tr> <td> Template </td> <td> Data </td> <td> Result </td> </tr>
+ 
+ <tr>
+ <td>
+ 
+ ```json
+ {
+    "field_1": [
+      "int[] $[*].key_1",
+      "int $[0].key_2"
+    ]
+ }
+ ```
+ 
+ </td>
+ 
+ <td>
+  
+ ```json
+[
+  {
+    "key_1": "1",
+    "key_2": 10
+  },
+  {
+    "key_1": "2"
+  }
+]
+ ```
+ 
+ </td>
+ 
+ <td>
+ 
+ ```json
+ {
+     "field_1": [1, 2, 10]
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ </table>
+ 
+ - Use array field with object item. Same as string item, but inside child item schema, 
+ you need to add **__array_path** key to define the root JsonPath of all child item's field.
+    
+  <table>
+  <tr> <td> Template </td> <td> Data </td> <td> Result </td> </tr>
+  
+  <tr>
+  <td>
+  
+  ```json
+  {
+     "field_1": [
+        {
+          "a": "int $.key_1",
+          "__array_path": "$.array[*]"
+        }   
+     ]
+  }
+  ```
+  
+  </td>
+  
+  <td>
+   
+  ```json
+{
+  "array": [
+    {
+      "key_1": "1",
+      "key_2": 10
+    },
+    {
+      "key_1": "2",
+      "key_2": 9
+    }
+  ],
+  "other": "..."
+}
+  ```
+  
+  </td>
+  
+  <td>
+  
+  ```json
+  {
+    "field_1": [ 
+      {
+        "a": 1
+      },
+      {
+        "a": 2
+      }    
+    ]
+  }
+  ```
+  
+  </td>
+  </tr>
+  
+  </table>
+ 
  ## Where is the data
  So far we know how to build the template, next is to understand where the data that engine extract from. 
  So when BatchEngine execute a request, it will build a grand JSON that contains all original request, all the executed requests and responses.
