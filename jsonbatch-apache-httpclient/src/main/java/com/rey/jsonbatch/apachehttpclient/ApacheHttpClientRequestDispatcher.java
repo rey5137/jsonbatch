@@ -53,12 +53,9 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
 
         response.setStatus(httpResponse.getStatusLine().getStatusCode());
         response.setHeaders(headerMap);
-        Header contentEncodingHeader = httpResponse.getEntity().getContentEncoding();
-        String charsetName = contentEncodingHeader == null ? "UTF-8" : contentEncodingHeader.getValue();
-
         if(options.getFailBackAsString())
             try {
-                String bodyAsString = readString(httpResponse.getEntity().getContent(), charsetName);
+                String bodyAsString = readString(httpResponse.getEntity().getContent(), "UTF-8");
                 response.setBody(bodyAsString);
                 try {
                     response.setBody(jsonProvider.parse(bodyAsString));
@@ -74,7 +71,7 @@ public class ApacheHttpClientRequestDispatcher implements RequestDispatcher {
             }
         else
             try {
-                response.setBody(jsonProvider.parse(httpResponse.getEntity().getContent(), charsetName));
+                response.setBody(jsonProvider.parse(httpResponse.getEntity().getContent(), "UTF-8"));
             }
             catch (Exception ex) {
                 logger.warn("Cannot parse response body as JSON", ex);

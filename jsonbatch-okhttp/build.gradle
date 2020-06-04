@@ -26,7 +26,7 @@ repositories {
 dependencies {
     implementation project(':jsonbatch-core')
     implementation 'com.jayway.jsonpath:json-path:2.4.0'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.7.2'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.7.22'
@@ -50,9 +50,9 @@ compileTestKotlin {
 }
 
 ext {
-    bintrayName = 'jsonbatch-apache-httpclient'
-    artifact = 'jsonbatch-apache-httpclient'
-    libraryDescription = 'JsonBatch RequestDispatcher with Apache HttpClient'
+    bintrayName = 'jsonbatch-okhttp'
+    artifact = 'jsonbatch-okhttp'
+    libraryDescription = 'JsonBatch RequestDispatcher with OkHttp'
     libraryVersion = '1.1.1'
 }
 

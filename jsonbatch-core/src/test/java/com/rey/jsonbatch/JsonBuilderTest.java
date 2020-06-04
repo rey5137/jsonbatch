@@ -84,7 +84,7 @@ public class JsonBuilderTest {
     public void buildNode__integerType() {
         String schema = "int $[0].second";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(BigInteger.ONE, result);
+        assertEquals(1, result);
     }
 
     @Test
@@ -98,21 +98,21 @@ public class JsonBuilderTest {
     public void buildNode__integerType__fromFloatValue() {
         String schema = "int $[0].third";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(new BigInteger("2"), result);
+        assertEquals(2L, result);
     }
 
     @Test
     public void buildNode__numberType() {
         String schema = "num $[0].third";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(new BigDecimal(1.5F), result);
+        assertEquals(1.5, result);
     }
 
     @Test
     public void buildNode__numberType__fromIntegerValue() {
         String schema = "num $[1].second";
         Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(new BigDecimal(2), result);
+        assertEquals(2.0F, result);
     }
 
     @Test
@@ -296,7 +296,7 @@ public class JsonBuilderTest {
 
         Map<String, Object> result = (Map<String, Object>)jsonBuilder.build(schema, documentContext);
 
-        assertEquals(new BigInteger("2"), result.get("first"));
+        assertEquals(2, result.get("first"));
         assertArray((List)result.get("second"), "str2", "str5");
     }
 
@@ -330,15 +330,15 @@ public class JsonBuilderTest {
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
 
         assertEquals(5, result.size());
-        assertEquals(new BigInteger("1"), result.get(0).get("first"));
+        assertEquals(1, result.get(0).get("first"));
         assertEquals("true", result.get(0).get("second"));
-        assertEquals(new BigInteger("2"), result.get(1).get("first"));
+        assertEquals(2, result.get(1).get("first"));
         assertEquals("false", result.get(1).get("second"));
-        assertEquals(new BigInteger("3"), result.get(2).get("first"));
+        assertEquals(3, result.get(2).get("first"));
         assertEquals(null, result.get(2).get("second"));
-        assertEquals(new BigInteger("4"), result.get(3).get("first"));
+        assertEquals(4, result.get(3).get("first"));
         assertEquals(null, result.get(3).get("second"));
-        assertEquals(new BigInteger("0"), result.get(4).get("first"));
+        assertEquals(0, result.get(4).get("first"));
         assertEquals("false", result.get(4).get("second"));
     }
 
@@ -366,7 +366,7 @@ public class JsonBuilderTest {
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Arrays.asList(childSchema, secondChildSchema), documentContext);
 
         assertEquals(3, result.size());
-        assertEquals(new BigInteger("1"), result.get(0).get("first"));
+        assertEquals(1, result.get(0).get("first"));
         assertEquals("str2", result.get(1).get("first"));
         assertEquals("str5", result.get(2).get("first"));
     }

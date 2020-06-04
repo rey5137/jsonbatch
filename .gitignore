@@ -3,3 +3,4 @@
 /.idea/
 /jsonbatch-apache-httpclient/build/
 /jsonbatch-core/build/
+/jsonbatch-okhttp/build/

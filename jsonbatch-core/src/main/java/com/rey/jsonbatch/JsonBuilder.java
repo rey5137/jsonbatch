@@ -231,24 +231,35 @@ public class JsonBuilder {
         switch (type) {
             case STRING:
                 return object.toString();
-            case INTEGER: {
-                BigInteger result = MathUtils.toBigInteger(object);
-                if (result == null)
-                    throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
-                return result;
-            }
-            case NUMBER: {
-                BigDecimal result = MathUtils.toBigDecimal(object);
-                if (result == null)
-                    throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
-                return result;
-            }
-            case BOOLEAN: {
+            case INTEGER:
+                if(object instanceof Integer || object instanceof Long || object instanceof BigInteger)
+                    return object;
+                if(object instanceof Float)
+                    return Math.round((Float)object);
+                if(object instanceof Double)
+                    return Math.round((Double)object);
+                if(object instanceof BigDecimal)
+                    return ((BigDecimal)object).toBigInteger();
+                if(object instanceof String)
+                    return new BigInteger(object.toString());
+                throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
+            case NUMBER:
+                if(object instanceof Float || object instanceof Double || object instanceof BigDecimal)
+                    return object;
+                if(object instanceof Integer)
+                    return ((Integer) object).floatValue();
+                if(object instanceof Long)
+                    return ((Long) object).doubleValue();
+                if(object instanceof BigInteger)
+                    return new BigDecimal((BigInteger)object);
+                if (object instanceof String)
+                    return new BigDecimal(object.toString());
+                throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
+            case BOOLEAN:
                 Boolean result = MathUtils.toBoolean(object);
                 if (result == null)
                     throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to boolean");
                 return result;
-            }
         }
         return object;
     }
