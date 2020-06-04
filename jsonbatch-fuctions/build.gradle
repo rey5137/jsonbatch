@@ -1,0 +1,143 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.72'
+}
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compileOnly project(':jsonbatch-core')
+    compileOnly 'org.apache-extras.beanshell:bsh:2.0b6'
+    compileOnly 'org.codehaus.groovy:groovy:2.5.12'
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+
+    testCompile project(':jsonbatch-core')
+    testCompile 'org.apache-extras.beanshell:bsh:2.0b6'
+    testCompile 'org.codehaus.groovy:groovy:2.5.12'
+    testCompile 'com.jayway.jsonpath:json-path:2.4.0'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.7.22'
+    testCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    testCompile 'com.fasterxml.jackson.core:jackson-core:2.11.0'
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+    testCompile 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
+    testCompile 'ch.qos.logback:logback-classic:1.2.3'
+    testCompile 'ch.qos.logback:logback-core:1.2.3'
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+ext {
+    bintrayName = 'jsonbatch-functions'
+    artifact = 'jsonbatch-apache-httpclient'
+    libraryDescription = 'Package provide extra JsonBatch Functions'
+    libraryVersion = '1.0.0'
+}
+
+group = publishedGroupId
+version = libraryVersion
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.java.srcDirs
+    archiveClassifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            id developerId
+            name developerName
+            email developerEmail
+        }
+    }
+
+    scm {
+        url siteUrl
+    }
+}
+
+// Create the publication with the pom configuration:
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            groupId publishedGroupId
+            artifactId artifact
+            version libraryVersion
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', libraryDescription)
+                root.appendNode('name', libraryName)
+                root.appendNode('url', siteUrl)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+bintray {
+    user = bintrayUser
+    key = bintrayApiKey
+    publications = ['MyPublication']
+//    configurations = ['archives']
+    pkg {
+        repo = bintrayRepo
+        name = bintrayName
+        desc = libraryDescription
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = allLicenses
+        publish = true
+        publicDownloadNumbers = true
+        version {
+            desc = libraryDescription
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = bintrayGpgPassword
+                //Optional. The passphrase for GPG signing'
+            }
+        }
+    }
+}
