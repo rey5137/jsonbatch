@@ -29,7 +29,9 @@ public class JsonBuilder {
 
     private Logger logger = LoggerFactory.getLogger(JsonBuilder.class);
 
-    private static final String PATTERN_INLINE_VARIABLE = "@\\{(((?!@\\{).)*)}@";
+    private static final Pattern PATTERN_INLINE_VARIABLE = Pattern.compile("@\\{(((?!@\\{).)*)}@");
+
+    private static final Pattern PATTERN_NUMERIC = Pattern.compile("^[0123456789.]*$");
 
     private static final String KEY_ARRAY_PATH = "__array_path";
 
@@ -192,17 +194,19 @@ public class JsonBuilder {
     }
 
     private Object parseRawData(String rawData, DocumentContext context) {
-        if (rawData.contains(".")) {
-            try {
-                return new BigDecimal(rawData);
-            } catch (NumberFormatException ex) {
-                logger.trace("Cannot parse [{}] as decimal", rawData);
-            }
-        } else {
-            try {
-                return new BigInteger(rawData);
-            } catch (NumberFormatException ex) {
-                logger.trace("Cannot parse [{}] as integer", rawData);
+        if(PATTERN_NUMERIC.matcher(rawData).matches()) {
+            if (rawData.contains(".")) {
+                try {
+                    return new BigDecimal(rawData);
+                } catch (NumberFormatException ex) {
+                    logger.trace("Cannot parse [{}] as decimal", rawData);
+                }
+            } else {
+                try {
+                    return new BigInteger(rawData);
+                } catch (NumberFormatException ex) {
+                    logger.trace("Cannot parse [{}] as integer", rawData);
+                }
             }
         }
         if (rawData.equalsIgnoreCase("true") || rawData.equalsIgnoreCase("false")) {
@@ -265,7 +269,7 @@ public class JsonBuilder {
     }
 
     private String buildStringFromRawData(String rawData, DocumentContext context) {
-        Matcher matcher = Pattern.compile(PATTERN_INLINE_VARIABLE).matcher(rawData);
+        Matcher matcher = PATTERN_INLINE_VARIABLE.matcher(rawData);
         int startIndex = 0;
         StringBuilder builder = new StringBuilder();
         while (matcher.find()) {
