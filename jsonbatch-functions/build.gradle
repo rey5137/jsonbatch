@@ -57,7 +57,7 @@ compileTestKotlin {
 
 ext {
     bintrayName = 'jsonbatch-functions'
-    artifact = 'jsonbatch-apache-httpclient'
+    artifact = 'jsonbatch-functions'
     libraryDescription = 'Package provide extra JsonBatch Functions'
     libraryVersion = '1.0.0'
 }
