@@ -52,7 +52,7 @@ ext {
     bintrayName = 'jsonbatch-core'
     artifact = 'jsonbatch-core'
     libraryDescription = 'An Engine to run batch request with JSON based REST APIs'
-    libraryVersion = '1.1.1'
+    libraryVersion = '1.1.2'
 }
 
 group = publishedGroupId

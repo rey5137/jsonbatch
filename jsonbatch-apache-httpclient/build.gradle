@@ -24,9 +24,15 @@ repositories {
 }
 
 dependencies {
-    implementation project(':jsonbatch-core')
-    implementation 'com.jayway.jsonpath:json-path:2.4.0'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.2'
+    compileOnly project(':jsonbatch-core')
+    compileOnly 'com.jayway.jsonpath:json-path:2.4.0'
+    compileOnly 'org.apache.httpcomponents:httpclient:4.5.2'
+    compileOnly 'org.slf4j:slf4j-api:1.7.30'
+
+    testCompile project(':jsonbatch-core')
+    testCompile 'com.jayway.jsonpath:json-path:2.4.0'
+    testCompile 'org.apache.httpcomponents:httpclient:4.5.2'
+    testCompile 'org.slf4j:slf4j-api:1.7.30'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:2.7.22'
@@ -53,7 +59,7 @@ ext {
     bintrayName = 'jsonbatch-apache-httpclient'
     artifact = 'jsonbatch-apache-httpclient'
     libraryDescription = 'JsonBatch RequestDispatcher with Apache HttpClient'
-    libraryVersion = '1.1.1'
+    libraryVersion = '1.1.2'
 }
 
 group = publishedGroupId
