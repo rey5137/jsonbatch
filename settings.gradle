@@ -2,5 +2,5 @@ rootProject.name = 'jsonbatch'
 include 'jsonbatch-apache-httpclient'
 include 'jsonbatch-core'
 include 'jsonbatch-okhttp'
-include 'jsonbatch-fuctions'
+include 'jsonbatch-functions'
 
