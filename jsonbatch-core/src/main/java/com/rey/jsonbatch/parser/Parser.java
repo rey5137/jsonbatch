@@ -66,26 +66,16 @@ public class Parser {
 
     private String parseStringArgument(List<TokenValue> values, String str) {
         int i;
-        boolean isEscaped = false;
         StringBuilder builder = new StringBuilder();
         for(i = 0; i < str.length(); i++) {
-            if(str.charAt(i) == CHAR_ESCAPE.charAt(0)) {
-                if(isEscaped)
+            if(str.charAt(i) == CHAR_QUOTE.charAt(0)) {
+                if(isEscapedQuote(builder))
                     builder.append(str.charAt(i));
-                isEscaped = !isEscaped;
-            }
-            else if(str.charAt(i) == CHAR_QUOTE.charAt(0)) {
-                if(isEscaped) {
-                    builder.append((str.charAt(i)));
-                    isEscaped = false;
-                }
                 else
                     break;
             }
-            else {
+            else
                 builder.append(str.charAt(i));
-                isEscaped = false;
-            }
         }
         if(i < str.length()) {
             String value = builder.toString();
@@ -94,6 +84,19 @@ public class Parser {
             return str.substring(i + 1).trim();
         }
         throw new IllegalArgumentException(("Expect '\"' character but not found"));
+    }
+
+    private boolean isEscapedQuote(StringBuilder builder) {
+        int size = builder.length();
+        if(size == 0)
+            return false;
+        int i = builder.length() - 1;
+        while(i >= 0) {
+            if(builder.charAt(i) != CHAR_ESCAPE.charAt(0))
+                break;
+            i --;
+        }
+        return (builder.length() - i) % 2 == 0;
     }
 
     private String parseRawArgument(List<TokenValue> values, String str) {

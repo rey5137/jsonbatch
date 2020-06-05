@@ -41,7 +41,7 @@ public class ParserTest {
         List<TokenValue> values = parser.parse("__sum(\"qwe\\\"abc\", __avg(\"$.body  \"))");
         assertArray(values,
                 of(Token.FUNC, "sum"),
-                of(Token.RAW, "qwe\"abc"),
+                of(Token.RAW, "qwe\\\"abc"),
                 of(Token.FUNC, "avg"),
                 of(Token.JSON_PATH, "$.body"),
                 of(Token.END_FUNC),
@@ -53,7 +53,7 @@ public class ParserTest {
         List<TokenValue> values = parser.parse("__sum(\"\\$.body.key\")");
         assertArray(values,
                 of(Token.FUNC, "sum"),
-                of(Token.RAW, "$.body.key"),
+                of(Token.RAW, "\\$.body.key"),
                 of(Token.END_FUNC));
     }
 

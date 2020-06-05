@@ -247,6 +247,34 @@ public class JsonBuilderTest {
     }
 
     @Test
+    public void buildNode__rawString__nestedVariable() {
+        String schema = "str asd @{qwe @{$[0].first}@}@";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals("asd qwe str1", result);
+    }
+
+    @Test
+    public void buildNode__rawString__nestedFunc() {
+        String schema = "str asd @{__regex(\"@{$[0].first}@\", \".*\", 0)}@";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals("asd str1", result);
+    }
+
+    @Test
+    public void buildNode__rawString__escapedVar() {
+        String schema = "str asd @{qwe \\\\@{\\\\}@}@";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals("asd qwe @{}@", result);
+    }
+
+    @Test
+    public void buildNode__function__escapeQuote() {
+        String schema = "str __regex(\"qwe \\\" abc\", \".*\", 0)";
+        Object result = jsonBuilder.build(schema, documentContext);
+        assertEquals("qwe \" abc", result);
+    }
+
+    @Test
     public void buildNode__rawInteger() {
         String schema = "int 1";
         Object result = jsonBuilder.build(schema, documentContext);

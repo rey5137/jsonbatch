@@ -19,17 +19,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class JsonBuilder {
 
     private Logger logger = LoggerFactory.getLogger(JsonBuilder.class);
-
-    private static final Pattern PATTERN_INLINE_VARIABLE = Pattern.compile("@\\{(((?!@\\{).)*)}@");
 
     private static final Pattern PATTERN_NUMERIC = Pattern.compile("^[0123456789.]*$");
 
@@ -268,24 +264,59 @@ public class JsonBuilder {
         return object;
     }
 
-    private String buildStringFromRawData(String rawData, DocumentContext context) {
-        Matcher matcher = PATTERN_INLINE_VARIABLE.matcher(rawData);
-        int startIndex = 0;
+    private String buildStringFromRawData(String str, DocumentContext context) {
+        logger.info("abc: {}", str);
+        boolean isEscaped = false;
         StringBuilder builder = new StringBuilder();
-        while (matcher.find()) {
-            int groupStart = matcher.start();
-            int groupEnd = matcher.end();
-            if (startIndex < groupStart) {
-                builder.append(rawData, startIndex, groupStart);
+        StringBuilder varBuilder = new StringBuilder();
+        int varCount = 0;
+        int i = 0;
+        while(i < str.length()) {
+            char curChar = str.charAt(i);
+            if(curChar == '@' && checkChar(str, i + 1, '{') && !isEscaped) {
+                varBuilder.append(str, i, i + 2);
+                i++;
+                varCount++;
             }
-            builder.append(build(matcher.group(1), context));
-            startIndex = groupEnd;
+            else if(curChar == '}' && checkChar(str, i + 1, '@') && !isEscaped && varCount > 0) {
+                varBuilder.append(str, i, i + 2);
+                i++;
+                varCount--;
+                if(varCount == 0) {
+                    builder.append(build(varBuilder.substring(2, varBuilder.length() - 2), context));
+                    varBuilder.delete(0, varBuilder.length());
+                }
+            }
+            else if (varCount != 0) {
+                if(curChar == '\\') {
+                    if(isEscaped)
+                        varBuilder.append(curChar);
+                    isEscaped = !isEscaped;
+                }
+                else {
+                    varBuilder.append(curChar);
+                    isEscaped = false;
+                }
+            }
+            else {
+                if(curChar == '\\') {
+                    if(isEscaped)
+                        builder.append(curChar);
+                    isEscaped = !isEscaped;
+                }
+                else {
+                    builder.append(curChar);
+                    isEscaped = false;
+                }
+            }
+            i++;
+            logger.info("qwe: {}", builder.toString());
         }
-
-        if (startIndex < rawData.length())
-            builder.append(rawData, startIndex, rawData.length());
-
         return builder.toString();
+    }
+
+    private boolean checkChar(String str, int index, char c) {
+        return index < str.length() && str.charAt(index) == c;
     }
 
     private boolean isValidKey(String key) {
@@ -312,13 +343,6 @@ public class JsonBuilder {
             this.isArray = elementType != null;
             this.elementType = elementType;
             this.values = values;
-        }
-
-        static Type from(String value) {
-            return Stream.of(Type.values())
-                    .filter(type -> Stream.of(type.values).anyMatch(v -> v.equalsIgnoreCase(value)))
-                    .findFirst()
-                    .orElse(null);
         }
 
     }

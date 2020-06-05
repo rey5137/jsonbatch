@@ -29,6 +29,15 @@ public class TokenValue {
                 Objects.equals(value, that.value);
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("token=").append(token);
+        sb.append(", value='").append(value).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
+
     public static TokenValue of(Token token, String value) {
         return new TokenValue(token, value);
     }
