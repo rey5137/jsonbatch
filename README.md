@@ -24,16 +24,45 @@ JsonBatch is available at the Central Maven Repository.
 <dependency>
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.2</version>
 </dependency>
 ```
-We also need to add a sub package that implement RequestDispatcher.
+We also need to add a sub package that implement RequestDispatcher. You can use this package that use Apache HttpClient:
 ```xml
-<dependency>
-    <groupId>com.github.rey5137</groupId>
-    <artifactId>jsonbatch-apache-httpclient</artifactId>
-    <version>1.1.0</version>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>com.github.rey5137</groupId>
+        <artifactId>jsonbatch-apache-httpclient</artifactId>
+        <version>1.1.2</version>
+    </dependency>
+
+    // need to include httpclient dependency
+
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.2</version>
+    </dependency>
+</dependencies>
+```
+Or this one use OkHttp:
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.github.rey5137</groupId>
+        <artifactId>jsonbatch-okhttp</artifactId>
+        <version>1.1.2</version>
+    </dependency>
+
+    // need to include okhttp dependency
+
+    <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>4.7.2</version>
+    </dependency>
+</dependencies>
+
 ```
 
 JsonBatch depends on Jayway JsonPath library to parse json path.
@@ -597,3 +626,30 @@ If your function is a reduce function, then you have to override the **handle()*
 If your function isn't a reduce function, then have to override the **invoke()** method, and JsonBuilder will call this method only one time with all the argument list.
 
 Note that the **type** argument is the expected type of function result, and it can be null. 
+
+You can also use this package that provide extra functions to JsonBatch:
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.github.rey5137</groupId>
+        <artifactId>jsonbatch-functions</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+
+    // need this dependency for BeanShellFunction
+
+    <dependency>
+        <groupId>org.apache-extras.beanshell</groupId>
+        <artifactId>bsh</artifactId>
+        <version>2.0b6</version>
+    </dependency>
+
+    // need this dependency for GroovyFunction
+
+    <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy</artifactId>
+        <version>2.5.12</version>
+    </dependency>
+</dependencies>
+```
