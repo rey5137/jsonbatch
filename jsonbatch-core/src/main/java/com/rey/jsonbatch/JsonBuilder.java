@@ -265,7 +265,6 @@ public class JsonBuilder {
     }
 
     private String buildStringFromRawData(String str, DocumentContext context) {
-        logger.info("abc: {}", str);
         boolean isEscaped = false;
         StringBuilder builder = new StringBuilder();
         StringBuilder varBuilder = new StringBuilder();
@@ -310,7 +309,6 @@ public class JsonBuilder {
                 }
             }
             i++;
-            logger.info("qwe: {}", builder.toString());
         }
         return builder.toString();
     }
