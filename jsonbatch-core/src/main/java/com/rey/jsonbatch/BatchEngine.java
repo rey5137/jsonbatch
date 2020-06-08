@@ -47,11 +47,10 @@ public class BatchEngine {
 
     public Response execute(Request originalRequest, BatchTemplate template) throws Exception {
         logger.info("Start executing batch with [{}] original request", originalRequest);
-        Map<String, Object> batchResponse = new LinkedHashMap<>();
-        batchResponse.put(KEY_ORIGINAL, originalRequest.toMap());
-        batchResponse.put(KEY_REQUESTS, new ArrayList<>());
-        batchResponse.put(KEY_RESPONSES, new ArrayList<>());
-        DocumentContext context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
+        DocumentContext context = JsonPath.using(configuration).parse("{}");
+        context.put("$", KEY_ORIGINAL, originalRequest.toMap());
+        context.put("$", KEY_REQUESTS, new ArrayList<>());
+        context.put("$", KEY_RESPONSES, new ArrayList<>());
         if(template.getDispatchOptions() == null)
             template.setDispatchOptions(new DispatchOptions());
 
@@ -63,9 +62,8 @@ public class BatchEngine {
             logger.info("Dispatching request with [{}] index", count);
             Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
             logger.info("Received response with [{}] status", response.getStatus());
-            ((List)batchResponse.get(KEY_REQUESTS)).add(request.toMap());
-            ((List)batchResponse.get(KEY_RESPONSES)).add(response.toMap());
-            context = JsonPath.using(configuration).parse(configuration.jsonProvider().toJson(batchResponse));
+            context.add(String.format("$.%s", KEY_REQUESTS), request.toMap());
+            context.add(String.format("$.%s", KEY_RESPONSES), response.toMap());
             logger.info("Done executing request with [{}] index", count);
 
             ResponseTemplate responseTemplate = chooseResponseTemplate(requestTemplate.getResponses(), context);
@@ -90,7 +88,7 @@ public class BatchEngine {
             logger.info("Not found final response. Return all batch responses");
             response = new Response();
             response.setStatus(200);
-            response.setBody(batchResponse);
+            response.setBody(context.json());
         }
 
         logger.info("Done executing batch with [{}] original request", originalRequest);

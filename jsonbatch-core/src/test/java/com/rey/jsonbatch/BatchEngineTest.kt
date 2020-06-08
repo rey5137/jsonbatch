@@ -3,6 +3,7 @@ package com.rey.jsonbatch
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.json.JsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
@@ -16,6 +17,7 @@ import org.junit.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
+import java.util.ArrayList
 
 class BatchEngineTest {
 
