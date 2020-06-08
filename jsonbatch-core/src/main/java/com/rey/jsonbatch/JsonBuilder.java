@@ -70,24 +70,25 @@ public class JsonBuilder {
         TokenValue firstToken = tokenValues.get(0);
         if (firstToken.getToken() == Token.JSON_PATH)
             return buildNodeFromJsonPath(type, context, firstToken.getValue());
-        else if (firstToken.getToken() == Token.FUNC) {
+        else if (firstToken.getToken() == Token.FUNC)
             return buildNodeFromFunction(type, tokenValues, context);
-        }
-
-        return buildNodeFromRawData(type, firstToken.getValue(), context);
+        else
+            return buildStringFromRawData(firstToken.getValue(), context);
     }
 
     private Map buildObject(Map<String, Object> schema, DocumentContext context) {
         Map<String, Object> result = new LinkedHashMap<>();
-        schema.forEach((key, childSchema) -> {
+        schema.forEach((key, value) -> {
             if (isValidKey(key)) {
-                logger.info("Build for [{}] key with schema: {}", key, childSchema);
-                if (childSchema instanceof String)
-                    result.put(key, buildNode((String) childSchema, context));
-                if (childSchema instanceof Map)
-                    result.put(key, buildObject((Map) childSchema, context));
-                if (childSchema instanceof Collection)
-                    result.put(key, buildList((Collection) childSchema, context));
+                logger.info("Build for [{}] key with schema: {}", key, value);
+                if (value instanceof String)
+                    result.put(key, buildNode((String) value, context));
+                else if (value instanceof Map)
+                    result.put(key, buildObject((Map) value, context));
+                else if (value instanceof Collection)
+                    result.put(key, buildList((Collection) value, context));
+                else
+                    result.put(key, value);
             }
         });
         return result;
@@ -95,27 +96,28 @@ public class JsonBuilder {
 
     private List buildList(Collection schema, DocumentContext context) {
         List<Object> result = new ArrayList<>();
-        for (Object childSchema : (Iterable<Object>) schema) {
-            logger.info("Build items with schema: {}", childSchema);
-            if (childSchema instanceof String) {
-                Object item = build(childSchema, context);
+        for (Object value : (Iterable<Object>) schema) {
+            logger.info("Build items with schema: {}", value);
+            if (value instanceof String) {
+                Object item = build(value, context);
                 if (item instanceof Collection)
                     result.addAll((Collection) item);
                 else
                     result.add(item);
-            } else if (childSchema instanceof Map) {
-                String arrayPath = (String) ((Map)childSchema).get(KEY_ARRAY_PATH);
+            } else if (value instanceof Map) {
+                String arrayPath = (String) ((Map) value).get(KEY_ARRAY_PATH);
                 if (arrayPath == null) {
                     logger.error("Missing array path in child schema");
                     throw new IllegalArgumentException("Missing array path in child schema");
                 }
                 List<Object> items = context.read(arrayPath);
                 result.addAll(items.stream()
-                        .map(object -> build(childSchema, JsonPath.using(context.configuration()).parse(object)))
+                        .map(object -> build(value, JsonPath.using(context.configuration()).parse(object)))
                         .collect(Collectors.toList()));
-            } else if(childSchema instanceof Collection) {
-                result.add(buildList((Collection)childSchema, context));
-            }
+            } else if (value instanceof Collection)
+                result.add(buildList((Collection) value, context));
+            else
+                result.add(value);
         }
         return result;
     }
@@ -190,7 +192,7 @@ public class JsonBuilder {
     }
 
     private Object parseRawData(String rawData, DocumentContext context) {
-        if(PATTERN_NUMERIC.matcher(rawData).matches()) {
+        if (PATTERN_NUMERIC.matcher(rawData).matches()) {
             if (rawData.contains(".")) {
                 try {
                     return new BigDecimal(rawData);
@@ -211,47 +213,31 @@ public class JsonBuilder {
         return buildStringFromRawData(rawData, context);
     }
 
-    private Object buildNodeFromRawData(Type type, String rawData, DocumentContext context) {
-        logger.trace("build Node with [{}] rawData to [{}] type", rawData, type);
-        if (type == null)
-            return buildStringFromRawData(rawData, context);
-        switch (type) {
-            case STRING:
-                return buildStringFromRawData(rawData, context);
-            case INTEGER:
-            case NUMBER:
-            case BOOLEAN:
-                return castToType(rawData, type);
-            default:
-                return context.configuration().jsonProvider().parse(rawData);
-        }
-    }
-
     private Object castToType(Object object, Type type) {
         switch (type) {
             case STRING:
                 return object.toString();
             case INTEGER:
-                if(object instanceof Integer || object instanceof Long || object instanceof BigInteger)
+                if (object instanceof Integer || object instanceof Long || object instanceof BigInteger)
                     return object;
-                if(object instanceof Float)
-                    return Math.round((Float)object);
-                if(object instanceof Double)
-                    return Math.round((Double)object);
-                if(object instanceof BigDecimal)
-                    return ((BigDecimal)object).toBigInteger();
-                if(object instanceof String)
+                if (object instanceof Float)
+                    return Math.round((Float) object);
+                if (object instanceof Double)
+                    return Math.round((Double) object);
+                if (object instanceof BigDecimal)
+                    return ((BigDecimal) object).toBigInteger();
+                if (object instanceof String)
                     return new BigInteger(object.toString());
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to integer");
             case NUMBER:
-                if(object instanceof Float || object instanceof Double || object instanceof BigDecimal)
+                if (object instanceof Float || object instanceof Double || object instanceof BigDecimal)
                     return object;
-                if(object instanceof Integer)
+                if (object instanceof Integer)
                     return ((Integer) object).floatValue();
-                if(object instanceof Long)
+                if (object instanceof Long)
                     return ((Long) object).doubleValue();
-                if(object instanceof BigInteger)
-                    return new BigDecimal((BigInteger)object);
+                if (object instanceof BigInteger)
+                    return new BigDecimal((BigInteger) object);
                 if (object instanceof String)
                     return new BigDecimal(object.toString());
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
@@ -270,40 +256,35 @@ public class JsonBuilder {
         StringBuilder varBuilder = new StringBuilder();
         int varCount = 0;
         int i = 0;
-        while(i < str.length()) {
+        while (i < str.length()) {
             char curChar = str.charAt(i);
-            if(curChar == '@' && checkChar(str, i + 1, '{') && !isEscaped) {
+            if (curChar == '@' && checkChar(str, i + 1, '{') && !isEscaped) {
                 varBuilder.append(str, i, i + 2);
                 i++;
                 varCount++;
-            }
-            else if(curChar == '}' && checkChar(str, i + 1, '@') && !isEscaped && varCount > 0) {
+            } else if (curChar == '}' && checkChar(str, i + 1, '@') && !isEscaped && varCount > 0) {
                 varBuilder.append(str, i, i + 2);
                 i++;
                 varCount--;
-                if(varCount == 0) {
+                if (varCount == 0) {
                     builder.append(build(varBuilder.substring(2, varBuilder.length() - 2), context));
                     varBuilder.delete(0, varBuilder.length());
                 }
-            }
-            else if (varCount != 0) {
-                if(curChar == '\\') {
-                    if(isEscaped)
+            } else if (varCount != 0) {
+                if (curChar == '\\') {
+                    if (isEscaped)
                         varBuilder.append(curChar);
                     isEscaped = !isEscaped;
-                }
-                else {
+                } else {
                     varBuilder.append(curChar);
                     isEscaped = false;
                 }
-            }
-            else {
-                if(curChar == '\\') {
-                    if(isEscaped)
+            } else {
+                if (curChar == '\\') {
+                    if (isEscaped)
                         builder.append(curChar);
                     isEscaped = !isEscaped;
-                }
-                else {
+                } else {
                     builder.append(curChar);
                     isEscaped = false;
                 }

@@ -275,38 +275,22 @@ public class JsonBuilderTest {
     }
 
     @Test
-    public void buildNode__rawInteger() {
-        String schema = "int 1";
-        Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(new BigInteger("1"), result);
-    }
-
-    @Test
-    public void buildNode__rawNumber() {
-        String schema = "num 2.5";
-        Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(new BigDecimal(2.5), result);
-    }
-
-    @Test
-    public void buildNode__rawBoolean() {
-        String schema = "bool false";
-        Object result = jsonBuilder.build(schema, documentContext);
-        assertEquals(false, result);
-    }
-
-    @Test
     public void buildNode__rawObject() {
-        String schema = "obj {\"key\": 1}";
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("a", 1);
+        schema.put("b", false);
+        schema.put("c", Collections.singletonList(2D));
         Map<String, Object> result = (Map<String, Object>)jsonBuilder.build(schema, documentContext);
-        assertEquals(1, result.get("key"));
+        assertEquals(1, result.get("a"));
+        assertEquals(false, result.get("b"));
+        assertArray((List<Object>)result.get("c"), 2D);
     }
 
     @Test
     public void buildNode__rawArray() {
-        String schema = "int[] [ 1, 2 ]";
+        List<Object> schema = Arrays.asList(1, true, "abc");
         List<Object> result = (List<Object>)jsonBuilder.build(schema, documentContext);
-        assertArray(result, 1, 2);
+        assertArray(result, 1, true, "abc");
     }
 
     @Test
