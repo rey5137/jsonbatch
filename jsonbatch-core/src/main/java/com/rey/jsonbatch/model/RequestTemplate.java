@@ -18,6 +18,8 @@ public class RequestTemplate {
 
     private List<ResponseTemplate> responses;
 
+    private LoopTemplate loop;
+
     public String getPredicate() {
         return predicate;
     }
@@ -72,5 +74,13 @@ public class RequestTemplate {
 
     public void setResponses(List<ResponseTemplate> responses) {
         this.responses = responses;
+    }
+
+    public LoopTemplate getLoop() {
+        return loop;
+    }
+
+    public void setLoop(LoopTemplate loop) {
+        this.loop = loop;
     }
 }

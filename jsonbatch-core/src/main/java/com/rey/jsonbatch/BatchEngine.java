@@ -6,6 +6,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.rey.jsonbatch.function.MathUtils;
 import com.rey.jsonbatch.model.BatchTemplate;
 import com.rey.jsonbatch.model.DispatchOptions;
+import com.rey.jsonbatch.model.LoopTemplate;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
 import com.rey.jsonbatch.model.Response;
@@ -13,10 +14,11 @@ import com.rey.jsonbatch.model.ResponseTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,19 +56,25 @@ public class BatchEngine {
         if(template.getDispatchOptions() == null)
             template.setDispatchOptions(new DispatchOptions());
 
-        RequestTemplate requestTemplate = chooseRequestTemplate(template.getRequests(), context);
-        int count = 0;
-        while(requestTemplate != null) {
-            logger.info("Preparing request with [{}] index", count);
-            Request request = buildRequest(requestTemplate, context);
-            logger.info("Dispatching request with [{}] index", count);
-            Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
-            logger.info("Received response with [{}] status", response.getStatus());
-            context.add(String.format("$.%s", KEY_REQUESTS), request.toMap());
-            context.add(String.format("$.%s", KEY_RESPONSES), response.toMap());
-            logger.info("Done executing request with [{}] index", count);
+        Deque<Step> queue = new ArrayDeque<>();
+        Step step = buildStep(template.getRequests(), String.format("$.%s", KEY_REQUESTS), String.format("$.%s", KEY_RESPONSES), context);
+        if(step != null)
+            queue.push(step);
 
-            ResponseTemplate responseTemplate = chooseResponseTemplate(requestTemplate.getResponses(), context);
+        while(!queue.isEmpty()) {
+            step = queue.pop();
+
+            logger.info("Preparing request");
+            Request request = buildRequest(step.requestTemplate, context);
+            logger.info("Dispatching request");
+            Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
+
+            logger.info("Received response with [{}] status", response.getStatus());
+            context.add(step.requestsPath, request.toMap());
+            context.add(step.responsesPath, response.toMap());
+            logger.info("Done executing request");
+
+            ResponseTemplate responseTemplate = chooseResponseTemplate(step.requestTemplate.getResponses(), context);
             if(responseTemplate != null) {
                 logger.info("Found break response");
                 response = buildResponse(responseTemplate, context);
@@ -74,8 +82,10 @@ public class BatchEngine {
                 return response;
             }
 
+
             requestTemplate = chooseRequestTemplate(requestTemplate.getRequests(), context);
-            count ++;
+            if(requestTemplate != null)
+                queue.push(Step.of(requestTemplate, String.format("$.%s", KEY_REQUESTS), String.format("$.%s", KEY_RESPONSES)));
         }
 
         Response response;
@@ -93,6 +103,30 @@ public class BatchEngine {
 
         logger.info("Done executing batch with [{}] original request", originalRequest);
         return response;
+    }
+
+    private boolean populateStepQueue(Deque<Step> stepQueue, List<RequestTemplate> requestTemplates, DocumentContext context) {
+
+
+        Step prevStep = stepQueue.peek();
+        if(isLoopStep(prevStep)) {
+            LoopTemplate loopTemplate = prevStep.requestTemplate.getLoop();
+            Object counter = jsonBuilder.build(loopTemplate.getCounterUpdate(), context);
+            context.set(prevStep.counterPath, counter);
+
+            Boolean isInLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context));
+            if(isInLoop) {
+
+
+            }
+        }
+    }
+
+    private Step buildStep(List<RequestTemplate> requestTemplates, String requestsPath, String responsesPath, DocumentContext context) {
+        RequestTemplate requestTemplate = chooseRequestTemplate(requestTemplates, context);
+        if(requestTemplate == null)
+            return null;
+        return Step.of(requestTemplate, requestsPath, responsesPath, null);
     }
 
     private RequestTemplate chooseRequestTemplate(List<RequestTemplate> requestTemplates, DocumentContext context) {
@@ -158,4 +192,26 @@ public class BatchEngine {
         return headers;
     }
 
+    private boolean isLoopStep(Step step) {
+        return step != null && step.requestTemplate.getLoop() != null;
+    }
+
+    private static class Step {
+        RequestTemplate requestTemplate;
+        String requestsPath;
+        String responsesPath;
+        String counterPath;
+
+        Step(RequestTemplate requestTemplate, String requestsPath, String responsesPath, String counterPath) {
+            this.requestTemplate = requestTemplate;
+            this.requestsPath = requestsPath;
+            this.responsesPath = responsesPath;
+            this.counterPath = counterPath;
+        }
+
+        private static Step of(RequestTemplate requestTemplate, String requestsPath, String responsesPath, String counterPath) {
+            return new Step(requestTemplate, requestsPath, responsesPath, counterPath);
+        }
+
+    }
 }
