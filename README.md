@@ -11,7 +11,7 @@ JsonBatch
 * [How it build JSON](#how-it-build-json)
 * [Data type](#data-type)
 * [Function](#function)
-* [Raw data](#raw-data)
+* [Raw String](#raw-string)
 * [Array](#array)
 * [Where is the data](#where-is-the-data)
 * [A real example](#a-real-example)
@@ -24,7 +24,7 @@ JsonBatch is available at the Central Maven Repository.
 <dependency>
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
-  <version>1.1.2</version>
+  <version>1.1.3</version>
 </dependency>
 ```
 We also need to add a sub package that implement RequestDispatcher. You can use this package that use Apache HttpClient:
@@ -130,9 +130,10 @@ When **RequestDispatcher** execute a request, you can pass options via dispatch_
 - ignore_parsing_error: Ignore error when parsing response body, and return null instead.
 
 ## How it build JSON
-To know how to build a json object from template, JsonBatch use a json with each value follow a specific format: 
+To know how to build a JSON object from template, JsonBatch use a JSON with special format. 
+All fields that aren't string will be same when build actual JSON but string field have to follow a specific format: 
 
-**\<data type\> <json_path or function(sum, min, max, ...) or raw_data>**
+**\<data type\> <json_path or function(sum, min, max, ...) or raw_string>**
 
 For example:
 ```json
@@ -148,7 +149,7 @@ You can omit the **\<data type>** part like that:
   "field_1": "$.responses[0].body.field_a" 
 }
 ```
-JsonBatch will use the type of extracted value instead of casting it.
+JsonBatch will use the type of extracted value instead of casting it. 
 
 
 ## Data type
@@ -254,8 +255,9 @@ JsonBatch will use the type of extracted value instead of casting it.
  | compare    | __cmp("\<expression>")   | __cmp("@{$.field_a}@ > 10")               | Compare 2 value |
  | regex      | __regex("<json_path>", "\<pattern>", \<index>)  | __regex("$.field_a", "(.*)", 1)  | Extract from string by regex pattern and group index |
  
- ## Raw data
- You can also pass raw data directly to value (in json format). Some examples:
+ ## Raw String
+ For string field, instead of using JsonPath or Function, we can use raw string directly. Note that JsonBatch support inline variable with format: **@{\<schema>}@**
+ Some examples:
  <table>
  <tr> <td> Template </td> <td> Result </td> </tr>
  <tr>
@@ -263,7 +265,7 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  ```json
  {
-     "field_1": "int 1"
+     "field_1": "This is a raw string"
  }
  ```
  
@@ -272,30 +274,7 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  ```json
  {
-     "field_1": 1
- }
- ```
- 
- </td>
- </tr>
- 
- <tr>
- <td>
- 
- ```json
- {
-     "field_1": "obj {\"key\": 1}"
- }
- ```
- 
- </td>
- <td>
- 
- ```json
- {
-     "field_1": {
-        "key": 1
-     }
+     "field_1": "This is a raw string"
  }
  ```
  
@@ -307,7 +286,7 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  ```json
  {
-     "field_1": "str abc @{$.key}@"
+     "field_1": "This is a raw string with @{$.key}@ var"
  }
  ```
  
@@ -316,7 +295,28 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  ```json
  {
-     "field_1": "abc 1"
+     "field_1": "This is a raw string with 1 var"
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ <tr>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "This is a raw string with @{nested @{$.key}@}@ var"
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+     "field_1": "This is a raw string with nested 1 var"
  }
  ```
  
@@ -325,7 +325,7 @@ JsonBatch will use the type of extracted value instead of casting it.
  
  </table>
  
- Note that, for string raw data, we can pass inline variable with format: **@{\<schema>}@**
+ 
  
  ## Array
  There is several way you can use to build Json Array:
