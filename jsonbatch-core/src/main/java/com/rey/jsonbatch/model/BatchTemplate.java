@@ -10,6 +10,8 @@ public class BatchTemplate {
 
     private DispatchOptions dispatchOptions;
 
+    private LoopOptions loopOptions;
+
     public List<RequestTemplate> getRequests() {
         return requests;
     }
@@ -32,5 +34,13 @@ public class BatchTemplate {
 
     public void setDispatchOptions(DispatchOptions dispatchOptions) {
         this.dispatchOptions = dispatchOptions;
+    }
+
+    public LoopOptions getLoopOptions() {
+        return loopOptions;
+    }
+
+    public void setLoopOptions(LoopOptions loopOptions) {
+        this.loopOptions = loopOptions;
     }
 }

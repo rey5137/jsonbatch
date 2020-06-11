@@ -6,6 +6,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.rey.jsonbatch.function.MathUtils;
 import com.rey.jsonbatch.model.BatchTemplate;
 import com.rey.jsonbatch.model.DispatchOptions;
+import com.rey.jsonbatch.model.LoopOptions;
 import com.rey.jsonbatch.model.LoopTemplate;
 import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
@@ -58,6 +59,8 @@ public class BatchEngine {
         jsonContext.put(KEY_RESPONSES, new ArrayList<>());
         if (template.getDispatchOptions() == null)
             template.setDispatchOptions(new DispatchOptions());
+        if (template.getLoopOptions() == null)
+            template.setLoopOptions(new LoopOptions());
 
         Deque<Step> queue = new ArrayDeque<>();
         Step step = buildStep(template.getRequests(), (List)jsonContext.get(KEY_REQUESTS), (List)jsonContext.get(KEY_RESPONSES), context, 0);
@@ -69,6 +72,7 @@ public class BatchEngine {
 
             if (isLoopStep(step)) {
                 LoopTemplate loopTemplate = step.requestTemplate.getLoop();
+                logger.info("Start loop request with [{}] index and [{}] loop time", step.index, step.loopTime);
                 if (step.loopTime == 0) {
                     Object counter = jsonBuilder.build(loopTemplate.getCounterInit(), context);
 
@@ -85,20 +89,21 @@ public class BatchEngine {
                     step.loopRequest.put(KEY_COUNTER, counter);
                 }
 
-                Boolean shouldLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context));
-                if (shouldLoop) {
-                    List<Object> nextRequests = new ArrayList<>();
-                    List<Object> nextResponses = new ArrayList<>();
-                    Step nextStep = buildStep(loopTemplate.getRequests(), nextRequests, nextResponses, context, 0);
-                    if (nextStep != null) {
-                        List<Object> requestTimes = (List<Object>)step.loopRequest.get(KEY_TIMES);
-                        requestTimes.add(nextRequests);
-                        List<Object> responseTimes = (List<Object>)step.loopResponse.get(KEY_TIMES);
-                        responseTimes.add(nextResponses);
-                        queue.push(step);
-                        queue.push(nextStep);
-                        step.loopTime++;
-                        continue;
+                if(step.loopTime >= template.getLoopOptions().getMaxLoopTime()) {
+                    logger.warn("Loop request with [{}] index exceed max loop time", step.index);
+                }
+                else {
+                    Boolean shouldLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context));
+                    if (shouldLoop) {
+                        Step nextStep = buildStep(loopTemplate.getRequests(), new ArrayList<>(), new ArrayList<>(), context, 0);
+                        if (nextStep != null) {
+                            ((List<Object>) step.loopRequest.get(KEY_TIMES)).add(nextStep.requests);
+                            ((List<Object>) step.loopResponse.get(KEY_TIMES)).add(nextStep.responses);
+                            queue.push(step);
+                            queue.push(nextStep);
+                            step.loopTime++;
+                            continue;
+                        }
                     }
                 }
 
@@ -113,8 +118,11 @@ public class BatchEngine {
                 if (step != null)
                     queue.push(step);
             } else {
+                logger.info("Start executing request with [{}] index", step.index);
                 Request request = buildRequest(step.requestTemplate, context);
                 Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
+                logger.info("Done executing request with [{}] index", step.index);
+
                 step.requests.add(request.toMap());
                 step.responses.add(response.toMap());
                 ResponseTemplate responseTemplate = chooseResponseTemplate(step.requestTemplate.getResponses(), context);
@@ -139,7 +147,7 @@ public class BatchEngine {
             logger.info("Not found final response. Return all batch responses");
             response = new Response();
             response.setStatus(200);
-            response.setBody(context.json());
+            response.setBody(jsonContext);
         }
 
         logger.info("Done executing batch with [{}] original request", originalRequest);
@@ -150,9 +158,7 @@ public class BatchEngine {
         RequestTemplate requestTemplate = chooseRequestTemplate(requestTemplates, context);
         if (requestTemplate == null)
             return null;
-        Step step = Step.of(requestTemplate, requests, responses);
-        step.index = index;
-        return step;
+        return Step.of(requestTemplate, requests, responses, index);
     }
 
     private RequestTemplate chooseRequestTemplate(List<RequestTemplate> requestTemplates, DocumentContext context) {
@@ -230,14 +236,15 @@ public class BatchEngine {
         Map<String, Object> loopResponse;
         int loopTime = 0;
 
-        Step(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses) {
+        Step(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses, int index) {
             this.requestTemplate = requestTemplate;
             this.requests = requests;
             this.responses = responses;
+            this.index = index;
         }
 
-        private static Step of(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses) {
-            return new Step(requestTemplate, requests, responses);
+        private static Step of(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses, int index) {
+            return new Step(requestTemplate, requests, responses, index);
         }
 
     }
