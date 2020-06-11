@@ -48,10 +48,10 @@ class BatchEngineTest {
                 "requests": [
                     {
                         "loop": {
-                            "counter_init": "int 0",
+                            "counter_init": 0,
                             "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 5\")",
                             "counter_update": "$.requests[0].times.length()",
-                            "loop_requests": [
+                            "requests": [
                                 {
                                     "http_method": "POST",
                                     "url": "https://localhost.com/@{$.requests[0].counter}@",

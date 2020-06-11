@@ -48,8 +48,7 @@ public class JsonBuilder {
             return buildObject((Map) schema, context);
         if (schema instanceof Collection)
             return buildList((Collection) schema, context);
-        logger.error("Unsupported class: {}", schema.getClass());
-        throw new IllegalArgumentException("Unsupported class: " + schema.getClass());
+        return schema;
     }
 
     private Object buildNode(String schema, DocumentContext context) {

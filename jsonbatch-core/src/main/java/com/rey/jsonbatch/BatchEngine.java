@@ -89,7 +89,7 @@ public class BatchEngine {
                 if (shouldLoop) {
                     List<Object> nextRequests = new ArrayList<>();
                     List<Object> nextResponses = new ArrayList<>();
-                    Step nextStep = buildStep(loopTemplate.getLoopRequests(), nextRequests, nextResponses, context, 0);
+                    Step nextStep = buildStep(loopTemplate.getRequests(), nextRequests, nextResponses, context, 0);
                     if (nextStep != null) {
                         List<Object> requestTimes = (List<Object>)step.loopRequest.get(KEY_TIMES);
                         requestTimes.add(nextRequests);

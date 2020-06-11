@@ -4,43 +4,43 @@ import java.util.List;
 
 public class LoopTemplate {
 
-    private String counterInit;
+    private Object counterInit;
 
-    private String counterPredicate;
+    private Object counterPredicate;
 
-    private String counterUpdate;
+    private Object counterUpdate;
 
-    private List<RequestTemplate> loopRequests;
+    private List<RequestTemplate> requests;
 
-    public String getCounterInit() {
+    public Object getCounterInit() {
         return counterInit;
     }
 
-    public void setCounterInit(String counterInit) {
+    public void setCounterInit(Object counterInit) {
         this.counterInit = counterInit;
     }
 
-    public String getCounterPredicate() {
+    public Object getCounterPredicate() {
         return counterPredicate;
     }
 
-    public void setCounterPredicate(String counterPredicate) {
+    public void setCounterPredicate(Object counterPredicate) {
         this.counterPredicate = counterPredicate;
     }
 
-    public String getCounterUpdate() {
+    public Object getCounterUpdate() {
         return counterUpdate;
     }
 
-    public void setCounterUpdate(String counterUpdate) {
+    public void setCounterUpdate(Object counterUpdate) {
         this.counterUpdate = counterUpdate;
     }
 
-    public List<RequestTemplate> getLoopRequests() {
-        return loopRequests;
+    public List<RequestTemplate> getRequests() {
+        return requests;
     }
 
-    public void setLoopRequests(List<RequestTemplate> loopRequests) {
-        this.loopRequests = loopRequests;
+    public void setRequests(List<RequestTemplate> requests) {
+        this.requests = requests;
     }
 }
