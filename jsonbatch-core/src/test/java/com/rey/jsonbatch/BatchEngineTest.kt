@@ -13,8 +13,7 @@ import com.rey.jsonbatch.model.BatchTemplate
 import com.rey.jsonbatch.model.DispatchOptions
 import com.rey.jsonbatch.model.Request
 import com.rey.jsonbatch.model.Response
-import junit.framework.Assert.assertEquals
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
@@ -129,6 +128,110 @@ class BatchEngineTest {
         assertEquals(2, context.read("$.requests[0].times.length()", Int::class.java))
         assertArray(context.read("$.requests[0].times[*][*].url", List::class.java),
                 "https://localhost.com/0", "https://localhost.com/1")
+    }
+
+    @Test
+    fun execute__withLoopRequest__withMultiRequestsEachLoop() {
+        val template = """
+            {
+                "requests": [
+                    {
+                        "loop": {
+                            "counter_init": 0,
+                            "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 5\")",
+                            "counter_update": "$.requests[0].times.length()",
+                            "requests": [
+                                {
+                                    "http_method": "POST",
+                                    "url": "https://localhost.com/@{$.requests[0].counter}@",
+                                    "body": {},
+                                    "requests": [
+                                        {
+                                            "http_method": "GET",
+                                            "url": "https://test.com/@{$.requests[0].counter}@",
+                                            "body": {}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": null
+            }
+        """.toObj(BatchTemplate::class.java)
+        val response = """
+            {
+                "headers": {},
+                "body": {
+                    "key": "a"
+                }
+            }
+        """.toObj(Response::class.java)
+
+        doReturn(response).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java))
+        val finalResponse = batchEngine.execute(Request(), template)
+        println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
+        val context = JsonPath.using(configuration).parse(finalResponse.body)
+        assertEquals(1, context.read("$.requests.length()", Int::class.java))
+        assertEquals(5, context.read("$.requests[0].times.length()", Int::class.java))
+        assertArray(context.read("$.requests[0].times[*][0].url", List::class.java),
+                "https://localhost.com/0", "https://localhost.com/1", "https://localhost.com/2", "https://localhost.com/3", "https://localhost.com/4")
+        assertArray(context.read("$.requests[0].times[*][1].url", List::class.java),
+                "https://test.com/0", "https://test.com/1", "https://test.com/2", "https://test.com/3", "https://test.com/4")
+    }
+
+    @Test
+    fun execute__withLoopRequest__withNestedLoop() {
+        val template = """
+            {
+                "requests": [
+                    {
+                        "loop": {
+                            "counter_init": 0,
+                            "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 2\")",
+                            "counter_update": "$.requests[0].times.length()",
+                            "requests": [
+                                {
+                                    "loop": {
+                                        "counter_init": 0,
+                                        "counter_predicate": "__cmp(\"@{$.requests[0].times[-1][0].counter}@ < 2\")",
+                                        "counter_update": "$.requests[0].times[-1][0].times.length()",
+                                        "requests": [
+                                            {
+                                                "http_method": "POST",
+                                                "url": "https://localhost.com/@{$.requests[0].counter}@/@{$.requests[0].times[-1][0].counter}@",
+                                                "body": {}
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": null
+            }
+        """.toObj(BatchTemplate::class.java)
+        val response = """
+            {
+                "headers": {},
+                "body": {
+                    "key": "a"
+                }
+            }
+        """.toObj(Response::class.java)
+
+        doReturn(response).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java))
+        val finalResponse = batchEngine.execute(Request(), template)
+        println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
+        val context = JsonPath.using(configuration).parse(finalResponse.body)
+        assertEquals(1, context.read("$.requests.length()", Int::class.java))
+        assertEquals(2, context.read("$.requests[0].times.length()", Int::class.java))
+        assertArray(context.read("$.requests[0].times[0][0].times[*][0].url", List::class.java),
+                "https://localhost.com/0/0", "https://localhost.com/0/1")
+        assertArray(context.read("$.requests[0].times[1][0].times[*][0].url", List::class.java),
+                "https://localhost.com/1/0", "https://localhost.com/1/1")
     }
 
     @Test
