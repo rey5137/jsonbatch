@@ -235,6 +235,53 @@ class BatchEngineTest {
     }
 
     @Test
+    fun execute__withLoopRequest__andFollowRequest() {
+        val template = """
+            {
+                "requests": [
+                    {
+                        "loop": {
+                            "counter_init": 0,
+                            "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 3\")",
+                            "counter_update": "$.requests[0].times.length()",
+                            "requests": [
+                                {
+                                    "http_method": "POST",
+                                    "url": "https://localhost.com/@{$.requests[0].counter}@",
+                                    "body": {}
+                                }
+                            ]
+                        },
+                        "requests": [
+                            {
+                                "http_method": "GET",
+                                "url": "https://test.com",
+                                "body": {}
+                            }
+                        ]
+                    }
+                ],
+                "responses": null
+            }
+        """.toObj(BatchTemplate::class.java)
+        val response = """
+            {
+                "headers": {},
+                "body": {
+                    "key": "a"
+                }
+            }
+        """.toObj(Response::class.java)
+
+        doReturn(response).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java))
+        val finalResponse = batchEngine.execute(Request(), template)
+        println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
+        val context = JsonPath.using(configuration).parse(finalResponse.body)
+        assertEquals(2, context.read("$.requests.length()", Int::class.java))
+        assertEquals(3, context.read("$.requests[0].times.length()", Int::class.java))
+    }
+
+    @Test
     fun test() {
         val template = """
             {

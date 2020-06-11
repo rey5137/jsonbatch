@@ -16,6 +16,7 @@ JsonBatch
 * [Where is the data](#where-is-the-data)
 * [A real example](#a-real-example)
 * [Custom function](#custom-function)
+* [Loop requests](#loop-requests)
 
 ## Getting Started
 
@@ -24,7 +25,7 @@ JsonBatch is available at the Central Maven Repository.
 <dependency>
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
-  <version>1.1.3</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 We also need to add a sub package that implement RequestDispatcher. You can use this package that use Apache HttpClient:
@@ -110,6 +111,9 @@ Here is Batch template full JSON format:
   "dispatch_options": {
     "fail_back_as_string": ...,
     "ignore_parsing_error": ...
+  },
+  "loop_options": {
+    "max_loop_time": ...
   }
 }
 ```  
@@ -653,3 +657,100 @@ You can also use this package that provide extra functions to JsonBatch:
     </dependency>
 </dependencies>
 ```
+
+## Loop requests
+There is a case you want to loop some request until you found an expected response. JsonBatch also support this.
+Below is an example template:
+```json
+{
+    "requests": [
+        {
+            "loop": {
+                "counter_init": 0,
+                "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 3\")",
+                "counter_update": "$.requests[0].times.length()",
+                "requests": [
+                    {
+                        "predicate": "...",
+                        "http_method": "GET",
+                        "url": "https://test.com/@{$.requests[0].counter}@",
+                        "body": {}
+                    },
+                    ...
+                ]
+            }
+        }
+    ],
+    "loop_options": {
+        "max_loop_time": 10
+    }
+}
+```
+As you can see, inside the first request template, we have a new object **loop** to define the loop request.
+- **counter_init**: A schema to initiate a counter object for your loop request. The counter object will be stored and can be accessed later via JsonPath.
+- **counter_predicate**: A predicate schema that should return Boolean object. The loop will run as long as this predicate return true.
+- **counter_update**: A schema to update the counter object each time the loop run.
+- **requests**: A list of request template will be executed each time.
+
+Next is the sample Batch response JSON for above template:
+```json
+{
+  "original": {},
+  "requests": [
+    {
+      "times": [
+        [ {
+            "http_method": "GET",
+            "url": "https://test.com/0",
+            "headers": {},
+            "body": {}
+        } ],
+        [ {
+            "http_method": "GET",
+            "url": "https://test.com/1",
+            "headers": {},
+            "body": {}
+        } ],
+        [ {
+            "http_method": "GET",
+            "url": "https://test.com/2",
+            "headers": {},
+            "body": {}
+        } ]
+      ],
+      "counter": 3
+    }
+  ],
+  "responses": [
+      {
+        "times": [
+          [ {
+              "status": 200,
+              "headers": {},
+              "body": {}
+          } ],
+          [ {
+              "status": 200,
+              "headers": {},
+              "body": {}
+          } ],
+          [ {
+              "status": 200,
+              "headers": {},
+              "body": {}
+          } ]
+        ]
+      }
+  ]
+}
+```
+
+The structure of the loop request is different with single request:
+- **times**: An array contains requests of each loop time. 
+- **counter**: the counter object of loop request.
+
+The same structure also applied to loop response.
+
+Note that loop request is powerful feature, but also can be misconfigured easily, that lead to an endless loop. 
+To avoid this issue, JsonBatch use a config **max_loop_time**  (default is 10). 
+If a loop ran too many times and surpassed this config, the Engine will forcefully break the loop.
