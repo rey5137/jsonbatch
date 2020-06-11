@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategy
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.internal.JsonContext
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider
 import com.jayway.jsonpath.spi.json.JsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
@@ -39,7 +40,66 @@ class BatchEngineTest {
         requestDispatcherMock = mock(RequestDispatcher::class.java)
         batchEngine = BatchEngine(conf, jsonBuilder, requestDispatcherMock)
     }
-    
+
+    @Test
+    fun execute__withLoopRequest() {
+        val template = """
+            {
+                "requests": [
+                    {
+                        "loop": {
+                            "counter_init": "int 0",
+                            "counter_predicate": "__cmp(\"@{$.requests[0].counter}@ < 5\")",
+                            "counter_update": "$.requests[0].times.length()",
+                            "loop_requests": [
+                                {
+                                    "http_method": "POST",
+                                    "url": "https://localhost.com/@{$.requests[0].counter}@",
+                                    "body": {}
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": null
+            }
+        """.toObj(BatchTemplate::class.java)
+        val response = """
+            {
+                "headers": {},
+                "body": {
+                    "key": "a"
+                }
+            }
+        """.toObj(Response::class.java)
+
+        doReturn(response).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java))
+        val finalResponse = batchEngine.execute(Request(), template)
+        println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
+    }
+
+    @Test
+    fun a() {
+        val conf = Configuration.builder()
+                .jsonProvider(JacksonJsonProvider(objectMapper))
+                .mappingProvider(JacksonMappingProvider(objectMapper))
+                .build()
+        val context = JsonPath.using(conf).parse("{\"a\": [[0, 1]]}") as JsonContext
+        val obj = context.json() as Map<String, Any>
+        println("${obj["a"]}")
+        val array = obj["a"] as MutableList<MutableList<Any>>
+        array[0].add(3)
+        println("${context.read("$.a", List::class.java)}")
+
+//        val path = JsonPath.compile("$.a[0]")
+//        path.read<>()
+//        println("${context.read("$.a[0]", List::class.java)}")
+//        val objs: MutableList<Any> = context.read("$.a[0]", MutableList::class.java) as MutableList<Any>
+//        objs.add(2)
+//        context.set("$.a[0]", objs)
+//        println("${context.read("$.a[0]", List::class.java)}")
+    }
+
     @Test
     fun test() {
         val template = """
@@ -167,5 +227,6 @@ class BatchEngineTest {
         val finalResponse = batchEngine.execute(originalRequest, batchTemplate)
         println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
     }
-    
+
+    fun <T> String.toObj(cl: Class<T>): T = objectMapper.readValue(this, cl)
 }

@@ -52,14 +52,15 @@ public class BatchEngine {
     public Response execute(Request originalRequest, BatchTemplate template) throws Exception {
         logger.info("Start executing batch with [{}] original request", originalRequest);
         DocumentContext context = JsonPath.using(configuration).parse("{}");
-        context.put("$", KEY_ORIGINAL, originalRequest.toMap());
-        context.put("$", KEY_REQUESTS, new ArrayList<>());
-        context.put("$", KEY_RESPONSES, new ArrayList<>());
+        Map<String, Object> jsonContext = context.json();
+        jsonContext.put(KEY_ORIGINAL, originalRequest.toMap());
+        jsonContext.put(KEY_REQUESTS, new ArrayList<>());
+        jsonContext.put(KEY_RESPONSES, new ArrayList<>());
         if (template.getDispatchOptions() == null)
             template.setDispatchOptions(new DispatchOptions());
 
         Deque<Step> queue = new ArrayDeque<>();
-        Step step = buildStep(template.getRequests(), String.format("$.%s", KEY_REQUESTS), String.format("$.%s", KEY_RESPONSES), context);
+        Step step = buildStep(template.getRequests(), (List)jsonContext.get(KEY_REQUESTS), (List)jsonContext.get(KEY_RESPONSES), context, 0);
         if (step != null)
             queue.push(step);
 
@@ -71,28 +72,29 @@ public class BatchEngine {
                 if (step.loopTime == 0) {
                     Object counter = jsonBuilder.build(loopTemplate.getCounterInit(), context);
 
-                    Map<String, Object> loopRequest = new HashMap<>();
-                    loopRequest.put(KEY_COUNTER, counter);
-                    loopRequest.put(KEY_TIMES, new ArrayList<>());
-                    context.add(step.requestsPath, loopRequest);
-                    step.counterPath = String.format("%s[%d].%s", step.requestsPath, step.index, KEY_COUNTER);
+                    step.loopRequest = new HashMap<>();
+                    step.loopRequest.put(KEY_COUNTER, counter);
+                    step.loopRequest.put(KEY_TIMES, new ArrayList<>());
+                    step.requests.add(step.loopRequest);
 
-                    Map<String, Object> loopResponse = new HashMap<>();
-                    loopRequest.put(KEY_TIMES, new ArrayList<>());
-                    context.add(step.responsesPath, loopResponse);
+                    step.loopResponse = new HashMap<>();
+                    step.loopResponse.put(KEY_TIMES, new ArrayList<>());
+                    step.responses.add(step.loopResponse);
                 } else {
                     Object counter = jsonBuilder.build(loopTemplate.getCounterUpdate(), context);
-                    context.set(step.counterPath, counter);
+                    step.loopRequest.put(KEY_COUNTER, counter);
                 }
 
                 Boolean shouldLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context));
                 if (shouldLoop) {
-                    String nextRequestsPath = String.format("%s[%d].%s[%d]", step.requestsPath, step.index, KEY_TIMES, step.loopTime);
-                    String nextResponsesPath = String.format("%s[%d].%s[%d]", step.responsesPath, step.index, KEY_TIMES, step.loopTime);
-                    Step nextStep = buildStep(loopTemplate.getLoopRequests(), nextRequestsPath, nextResponsesPath, context);
+                    List<Object> nextRequests = new ArrayList<>();
+                    List<Object> nextResponses = new ArrayList<>();
+                    Step nextStep = buildStep(loopTemplate.getLoopRequests(), nextRequests, nextResponses, context, 0);
                     if (nextStep != null) {
-                        context.add(nextRequestsPath, new ArrayList<>());
-                        context.add(nextResponsesPath, new ArrayList<>());
+                        List<Object> requestTimes = (List<Object>)step.loopRequest.get(KEY_TIMES);
+                        requestTimes.add(nextRequests);
+                        List<Object> responseTimes = (List<Object>)step.loopResponse.get(KEY_TIMES);
+                        responseTimes.add(nextResponses);
                         queue.push(step);
                         queue.push(nextStep);
                         step.loopTime++;
@@ -107,14 +109,14 @@ public class BatchEngine {
                     logger.info("Done executing batch with [{}] original request", originalRequest);
                     return response;
                 }
-                step = buildStep(step.requestTemplate.getRequests(), step.requestsPath, step.responsesPath, context);
+                step = buildStep(step.requestTemplate.getRequests(), step.requests, step.responses, context, step.index + 1);
                 if (step != null)
                     queue.push(step);
             } else {
                 Request request = buildRequest(step.requestTemplate, context);
                 Response response = requestDispatcher.dispatch(request, configuration.jsonProvider(), template.getDispatchOptions());
-                context.add(step.requestsPath, request.toMap());
-                context.add(step.responsesPath, response.toMap());
+                step.requests.add(request.toMap());
+                step.responses.add(response.toMap());
                 ResponseTemplate responseTemplate = chooseResponseTemplate(step.requestTemplate.getResponses(), context);
                 if (responseTemplate != null) {
                     logger.info("Found break response");
@@ -122,7 +124,7 @@ public class BatchEngine {
                     logger.info("Done executing batch with [{}] original request", originalRequest);
                     return response;
                 }
-                step = buildStep(step.requestTemplate.getRequests(), step.requestsPath, step.responsesPath, context);
+                step = buildStep(step.requestTemplate.getRequests(), step.requests, step.responses, context, step.index + 1);
                 if (step != null)
                     queue.push(step);
             }
@@ -144,12 +146,13 @@ public class BatchEngine {
         return response;
     }
 
-    private Step buildStep(List<RequestTemplate> requestTemplates, String requestsPath, String responsesPath, DocumentContext context) {
+    private Step buildStep(List<RequestTemplate> requestTemplates, List<Object> requests, List<Object> responses, DocumentContext context, int index) {
         RequestTemplate requestTemplate = chooseRequestTemplate(requestTemplates, context);
         if (requestTemplate == null)
             return null;
-        Integer index = context.read(String.format("%s.length()", requestsPath));
-        return Step.of(requestTemplate, requestsPath, responsesPath, index);
+        Step step = Step.of(requestTemplate, requests, responses);
+        step.index = index;
+        return step;
     }
 
     private RequestTemplate chooseRequestTemplate(List<RequestTemplate> requestTemplates, DocumentContext context) {
@@ -219,22 +222,22 @@ public class BatchEngine {
 
     private static class Step {
         RequestTemplate requestTemplate;
-        String requestsPath;
-        String responsesPath;
+        List<Object> requests;
+        List<Object> responses;
         int index;
 
-        String counterPath;
+        Map<String, Object> loopRequest;
+        Map<String, Object> loopResponse;
         int loopTime = 0;
 
-        Step(RequestTemplate requestTemplate, String requestsPath, String responsesPath, int index) {
+        Step(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses) {
             this.requestTemplate = requestTemplate;
-            this.requestsPath = requestsPath;
-            this.responsesPath = responsesPath;
-            this.index = index;
+            this.requests = requests;
+            this.responses = responses;
         }
 
-        private static Step of(RequestTemplate requestTemplate, String requestsPath, String responsesPath, int index) {
-            return new Step(requestTemplate, requestsPath, responsesPath, index);
+        private static Step of(RequestTemplate requestTemplate, List<Object> requests, List<Object> responses) {
+            return new Step(requestTemplate, requests, responses);
         }
 
     }
