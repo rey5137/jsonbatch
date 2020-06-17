@@ -17,6 +17,7 @@ JsonBatch
 * [A real example](#a-real-example)
 * [Custom function](#custom-function)
 * [Loop requests](#loop-requests)
+* [Response transform](#response-transform)
 
 ## Getting Started
 
@@ -25,7 +26,7 @@ JsonBatch is available at the Central Maven Repository.
 <dependency>
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
 </dependency>
 ```
 We also need to add a sub package that implement RequestDispatcher. You can use this package that use Apache HttpClient:
@@ -754,3 +755,36 @@ The same structure also applied to loop response.
 Note that loop request is powerful feature, but also can be misconfigured easily, that lead to an endless loop. 
 To avoid this issue, JsonBatch use a config **max_loop_time**  (default is 10). 
 If a loop ran too many times and surpassed this config, the Engine will forcefully break the loop.
+
+## Response transform
+By default, the Engine will put all the response data into the grand JSON. 
+But if you want to only keep some interested data and discard the rest of the response (to make it more memory-friendly),
+then you can supply a list of transformers inside the request template. 
+```json
+{
+  "requests": [
+      {
+        "predicate": "...",
+        "http_method": "...",
+        "url": "...",
+        "headers": { ... },
+        "body": { ... },
+        "transformers": [
+          {
+            "predicate": "...",
+            "status": "...",
+            "headers": { ... },
+            "body": { ... }
+          },
+          ...
+        ],
+        "requests": [  ... <next requests> ... ],
+        "responses": [ ... <response templates> ... ]
+      },
+      ...
+  ]
+  ...
+}
+```  
+The transformer template is same as response template, the only different is the JSON object it'll work on (the root level of JsonPath will be different). 
+Transformer template works on each correspond JSON response, but response template works on the grand JSON that constains all data. 
