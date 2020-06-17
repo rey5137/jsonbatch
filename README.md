@@ -27,8 +27,10 @@ JsonBatch is available at the Central Maven Repository.
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
   <version>1.2.1</version>
-</dependency>
+</dependency> 
+
 // need to include jsonpath dependency
+
 <dependency>
     <groupId>com.jayway.jsonpath</groupId>
     <artifactId>json-path</artifactId>
