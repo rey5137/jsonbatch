@@ -20,6 +20,8 @@ public class RequestTemplate {
 
     private LoopTemplate loop;
 
+    private List<ResponseTemplate> transformers;
+
     public String getPredicate() {
         return predicate;
     }
@@ -82,5 +84,13 @@ public class RequestTemplate {
 
     public void setLoop(LoopTemplate loop) {
         this.loop = loop;
+    }
+
+    public List<ResponseTemplate> getTransformers() {
+        return transformers;
+    }
+
+    public void setTransformers(List<ResponseTemplate> transformers) {
+        this.transformers = transformers;
     }
 }
