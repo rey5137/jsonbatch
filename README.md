@@ -787,4 +787,4 @@ then you can supply a list of transformers inside the request template.
 }
 ```  
 The transformer template is same as response template, the only different is the JSON object it'll work on (the root level of JsonPath will be different). 
-Transformer template works on each correspond JSON response, but response template works on the grand JSON that constains all data. 
+Transformer template works on each corresponding JSON response, but response template works on the grand JSON that constains all data. 
