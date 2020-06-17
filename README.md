@@ -28,6 +28,12 @@ JsonBatch is available at the Central Maven Repository.
   <artifactId>jsonbatch-core</artifactId>
   <version>1.2.1</version>
 </dependency>
+// need to include jsonpath dependency
+<dependency>
+    <groupId>com.jayway.jsonpath</groupId>
+    <artifactId>json-path</artifactId>
+    <version>2.4.0</version>
+</dependency>
 ```
 We also need to add a sub package that implement RequestDispatcher. You can use this package that use Apache HttpClient:
 ```xml
