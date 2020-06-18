@@ -104,12 +104,17 @@ public class JsonBuilder {
                 else
                     result.add(item);
             } else if (value instanceof Map) {
-                String arrayPath = (String) ((Map) value).get(KEY_ARRAY_PATH);
+                Object arrayPath =  ((Map) value).get(KEY_ARRAY_PATH);
                 if (arrayPath == null) {
                     logger.error("Missing array path in child schema");
                     throw new IllegalArgumentException("Missing array path in child schema");
                 }
-                List<Object> items = context.read(arrayPath);
+                Object item = build(arrayPath, context);
+                Collection<Object> items;
+                if (item instanceof Collection)
+                    items = (Collection) item;
+                else
+                    items = Collections.singletonList(item);
                 result.addAll(items.stream()
                         .map(object -> build(value, JsonPath.using(context.configuration()).parse(object)))
                         .collect(Collectors.toList()));
@@ -129,16 +134,16 @@ public class JsonBuilder {
         if (type == null)
             return object;
         if (!type.isArray) {
-            if (object instanceof List) {
-                List list = (List) object;
-                object = list.isEmpty() ? null : list.get(0);
+            if (object instanceof Collection) {
+                Collection list = (Collection) object;
+                object = list.isEmpty() ? null : list.iterator().next();
             }
             return castToType(object, type);
         } else {
-            if (!(object instanceof List)) {
-                object = Collections.singleton(object);
+            if (!(object instanceof Collection)) {
+                object = Collections.singletonList(object);
             }
-            return ((List) object).stream()
+            return ((Collection) object).stream()
                     .map(obj -> castToType(obj, type.elementType))
                     .collect(Collectors.toList());
         }

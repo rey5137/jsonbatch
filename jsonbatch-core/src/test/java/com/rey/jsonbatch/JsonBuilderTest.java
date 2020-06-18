@@ -355,6 +355,22 @@ public class JsonBuilderTest {
     }
 
     @Test
+    public void buildArray__withObjectSchema__andArrayPathIsNotString() {
+        Map<String, Object> childSchema = new HashMap<>();
+        childSchema.put("first", "int $.second");
+        childSchema.put("second", "str $.third");
+        childSchema.put("__array_path", Arrays.asList("$[?(@.fourth == true)]", "$[?(@.fifth == true)]"));
+
+        List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
+
+        assertEquals(2, result.size());
+        assertEquals(1, result.get(0).get("first"));
+        assertEquals("1.5", result.get(0).get("second"));
+        assertEquals(3, result.get(1).get("first"));
+        assertEquals("3.5", result.get(1).get("second"));
+    }
+
+    @Test
     public void buildArray__withListSchema() {
 
         List result = (List)jsonBuilder.build(Collections.singletonList(Collections.singletonList("$[0].second")), documentContext);
