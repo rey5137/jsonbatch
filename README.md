@@ -612,6 +612,8 @@ Let me explain this template:
 - After that, it will make a POST request to **https://jsonplaceholder.typicode.com/posts** to create a new post with userId & body are same as first post.
 - If the POST request succeed, it will return a response with both first post & new post. If not (status != 201), it will return a response with new_post = "Error". 
 
+You can try out this example via [this web app](https://jsonbatch-demo.herokuapp.com/)
+
 ## Custom function
 You can add your own custom function to JsonBuilder object. All the functions have to extend from a base class **Function**:
 ```java
