@@ -342,7 +342,7 @@ public class JsonBuilderTest {
         Map<String, Object> childSchema = new HashMap<>();
         childSchema.put("first", "int $.second");
         childSchema.put("second", "str $.fourth");
-        childSchema.put("__array_path", "$");
+        childSchema.put("__array_schema", "$");
 
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
 
@@ -364,7 +364,7 @@ public class JsonBuilderTest {
         Map<String, Object> childSchema = new HashMap<>();
         childSchema.put("first", "int $.second");
         childSchema.put("second", "str $.third");
-        childSchema.put("__array_path", Arrays.asList("$[?(@.fourth == true)]", "$[?(@.fifth == true)]"));
+        childSchema.put("__array_schema", Arrays.asList("$[?(@.fourth == true)]", "$[?(@.fifth == true)]"));
 
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
 
@@ -390,11 +390,11 @@ public class JsonBuilderTest {
     public void buildArray__multiItems() {
         Map<String, Object> childSchema = new HashMap<>();
         childSchema.put("first", "int $.second");
-        childSchema.put("__array_path", "$[?(@.fourth == true)]");
+        childSchema.put("__array_schema", "$[?(@.fourth == true)]");
 
         Map<String, Object> secondChildSchema = new HashMap<>();
         secondChildSchema.put("first", "str $.first");
-        secondChildSchema.put("__array_path", "$[?(@.fourth == false)]");
+        secondChildSchema.put("__array_schema", "$[?(@.fourth == false)]");
 
         List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Arrays.asList(childSchema, secondChildSchema), documentContext);
 

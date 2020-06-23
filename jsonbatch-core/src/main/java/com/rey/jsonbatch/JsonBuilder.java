@@ -29,7 +29,7 @@ public class JsonBuilder {
 
     private static final Pattern PATTERN_NUMERIC = Pattern.compile("^[0123456789.]*$");
 
-    private static final String KEY_ARRAY_PATH = "__array_path";
+    private static final String KEY_ARRAY_SCHEMA = "__array_schema";
 
     private Map<String, Function> functionMap = new HashMap<>();
 
@@ -104,7 +104,7 @@ public class JsonBuilder {
                 else
                     result.add(item);
             } else if (value instanceof Map) {
-                Object arrayPath =  ((Map) value).get(KEY_ARRAY_PATH);
+                Object arrayPath =  ((Map) value).get(KEY_ARRAY_SCHEMA);
                 if (arrayPath == null) {
                     logger.error("Missing array path in child schema");
                     throw new IllegalArgumentException("Missing array path in child schema");
@@ -307,7 +307,7 @@ public class JsonBuilder {
     }
 
     private boolean isValidKey(String key) {
-        return !KEY_ARRAY_PATH.equals(key);
+        return !KEY_ARRAY_SCHEMA.equals(key);
     }
 
     public enum Type {
