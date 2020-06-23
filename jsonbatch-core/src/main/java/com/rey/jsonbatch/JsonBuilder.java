@@ -104,12 +104,12 @@ public class JsonBuilder {
                 else
                     result.add(item);
             } else if (value instanceof Map) {
-                Object arrayPath =  ((Map) value).get(KEY_ARRAY_SCHEMA);
-                if (arrayPath == null) {
-                    logger.error("Missing array path in child schema");
-                    throw new IllegalArgumentException("Missing array path in child schema");
+                Object arraySchema =  ((Map) value).get(KEY_ARRAY_SCHEMA);
+                if (arraySchema == null) {
+                    logger.error("Missing array schema in child schema");
+                    throw new IllegalArgumentException("Missing array schema in child schema");
                 }
-                Object item = build(arrayPath, context);
+                Object item = build(arraySchema, context);
                 Collection<Object> items;
                 if (item instanceof Collection)
                     items = (Collection) item;
