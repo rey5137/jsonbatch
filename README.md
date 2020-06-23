@@ -436,7 +436,9 @@ JsonBatch will use the type of extracted value instead of casting it.
  </table>
  
  - Use array field with object item. Same as string item, but inside child item schema, 
- you need to add **__array_path** key to define the root JsonPath of all child item's field.
+ you need to add **__array_schema** key to define JSON context of each child item. 
+ The root JsonPath ($) points to child item's JSON context. You can use **$$** at the start of JsonPath 
+ to points to grand JSON context.
     
   <table>
   <tr> <td> Template </td> <td> Data </td> <td> Result </td> </tr>
@@ -449,7 +451,7 @@ JsonBatch will use the type of extracted value instead of casting it.
      "field_1": [
         {
           "a": "int $.key_1",
-          "__array_path": "$.array[*]"
+          "__array_schema": "$.array[*]"
         }   
      ]
   }
@@ -494,6 +496,63 @@ JsonBatch will use the type of extracted value instead of casting it.
   
   </td>
   </tr>
+  
+  <tr>
+  <td>
+  
+  ```json
+  {
+     "field_1": [
+        {
+          "a": "int $.key_1",
+          "b": "$$.array[@{$.key_1}@].key_2",
+          "__array_schema": "$.array[*]"
+        }   
+     ]
+  }
+  ```
+  
+  </td>
+    
+  <td>
+   
+  ```json
+{
+  "array": [
+    {
+      "key_1": "1",
+      "key_2": 10
+    },
+    {
+      "key_1": "0",
+      "key_2": 9
+    }
+  ],
+  "other": "..."
+}
+  ```
+  
+  </td>
+  <td>
+  
+  ```json
+  {
+    "field_1": [ 
+      {
+        "a": 1,
+        "b": 9
+      },
+      {
+        "a": 0,
+        "b": 10
+      }    
+    ]
+  }
+  ```
+  
+  </td>      
+  </tr>
+  
   
   </table>
  
