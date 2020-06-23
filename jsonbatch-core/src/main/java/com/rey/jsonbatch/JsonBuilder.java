@@ -128,6 +128,10 @@ public class JsonBuilder {
 
     private Object buildNodeFromJsonPath(Type type, DocumentContext context, String jsonPath) {
         logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
+        if(jsonPath.contains("@{")) {
+            logger.trace("Found inline variable");
+            jsonPath = buildStringFromRawData(jsonPath, context);
+        }
         Object object = context.read(jsonPath);
         if (object == null)
             return null;

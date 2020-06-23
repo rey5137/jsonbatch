@@ -301,6 +301,11 @@ public class JsonBuilderTest {
     }
 
     @Test
+    public void buildNode__jsonPathWithInlineVariable() {
+        assertEquals("str3", jsonBuilder.build("$[@{$[1].second}@].first", documentContext));
+    }
+
+    @Test
     public void buildObject() {
         Map<String, Object> schema = new HashMap<>();
         schema.put("first", "int $[?(@.first == 'str2')].second");
