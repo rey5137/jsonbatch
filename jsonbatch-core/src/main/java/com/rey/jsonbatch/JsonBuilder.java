@@ -41,17 +41,21 @@ public class JsonBuilder {
     }
 
     public Object build(Object schema, DocumentContext context) {
+        return build(schema, context, context);
+    }
+
+    private Object build(Object schema, DocumentContext context, DocumentContext rootContext) {
         logger.info("Build schema: {}", schema);
         if (schema instanceof String)
-            return buildNode((String) schema, context);
+            return buildNode((String) schema, context, rootContext);
         if (schema instanceof Map)
-            return buildObject((Map) schema, context);
+            return buildObject((Map) schema, context, rootContext);
         if (schema instanceof Collection)
-            return buildList((Collection) schema, context);
+            return buildList((Collection) schema, context, rootContext);
         return schema;
     }
 
-    private Object buildNode(String schema, DocumentContext context) {
+    private Object buildNode(String schema, DocumentContext context, DocumentContext rootContext) {
         Type type = null;
         List<TokenValue> tokenValues = null;
         for (Type t : Type.values()) {
@@ -68,24 +72,24 @@ public class JsonBuilder {
 
         TokenValue firstToken = tokenValues.get(0);
         if (firstToken.getToken() == Token.JSON_PATH)
-            return buildNodeFromJsonPath(type, context, firstToken.getValue());
+            return buildNodeFromJsonPath(type, context, rootContext, firstToken.getValue());
         else if (firstToken.getToken() == Token.FUNC)
-            return buildNodeFromFunction(type, tokenValues, context);
+            return buildNodeFromFunction(type, tokenValues, context, rootContext);
         else
-            return buildStringFromRawData(firstToken.getValue(), context);
+            return buildStringFromRawData(firstToken.getValue(), context, rootContext);
     }
 
-    private Map buildObject(Map<String, Object> schema, DocumentContext context) {
+    private Map buildObject(Map<String, Object> schema, DocumentContext context, DocumentContext rootContext) {
         Map<String, Object> result = new LinkedHashMap<>();
         schema.forEach((key, value) -> {
             if (isValidKey(key)) {
                 logger.info("Build for [{}] key with schema: {}", key, value);
                 if (value instanceof String)
-                    result.put(key, buildNode((String) value, context));
+                    result.put(key, buildNode((String) value, context, rootContext));
                 else if (value instanceof Map)
-                    result.put(key, buildObject((Map) value, context));
+                    result.put(key, buildObject((Map) value, context, rootContext));
                 else if (value instanceof Collection)
-                    result.put(key, buildList((Collection) value, context));
+                    result.put(key, buildList((Collection) value, context, rootContext));
                 else
                     result.put(key, value);
             }
@@ -93,12 +97,12 @@ public class JsonBuilder {
         return result;
     }
 
-    private List buildList(Collection schema, DocumentContext context) {
+    private List buildList(Collection schema, DocumentContext context, DocumentContext rootContext) {
         List<Object> result = new ArrayList<>();
         for (Object value : (Iterable<Object>) schema) {
             logger.info("Build items with schema: {}", value);
             if (value instanceof String) {
-                Object item = build(value, context);
+                Object item = build(value, context, rootContext);
                 if (item instanceof Collection)
                     result.addAll((Collection) item);
                 else
@@ -109,30 +113,31 @@ public class JsonBuilder {
                     logger.error("Missing array schema in child schema");
                     throw new IllegalArgumentException("Missing array schema in child schema");
                 }
-                Object item = build(arraySchema, context);
+                Object item = build(arraySchema, context, rootContext);
                 Collection<Object> items;
                 if (item instanceof Collection)
                     items = (Collection) item;
                 else
                     items = Collections.singletonList(item);
                 result.addAll(items.stream()
-                        .map(object -> build(value, JsonPath.using(context.configuration()).parse(object)))
+                        .map(object -> build(value, JsonPath.using(context.configuration()).parse(object), rootContext))
                         .collect(Collectors.toList()));
             } else if (value instanceof Collection)
-                result.add(buildList((Collection) value, context));
+                result.add(buildList((Collection) value, context, rootContext));
             else
                 result.add(value);
         }
         return result;
     }
 
-    private Object buildNodeFromJsonPath(Type type, DocumentContext context, String jsonPath) {
+    private Object buildNodeFromJsonPath(Type type, DocumentContext context, DocumentContext rootContext, String jsonPath) {
         logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
         if(jsonPath.contains("@{")) {
             logger.trace("Found inline variable");
-            jsonPath = buildStringFromRawData(jsonPath, context);
+            jsonPath = buildStringFromRawData(jsonPath, context, rootContext);
+            logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
         }
-        Object object = context.read(jsonPath);
+        Object object = parseJsonPath(jsonPath, context, rootContext);
         if (object == null)
             return null;
         if (type == null)
@@ -153,7 +158,7 @@ public class JsonBuilder {
         }
     }
 
-    private Object buildNodeFromFunction(Type type, List<TokenValue> tokenValues, DocumentContext context) {
+    private Object buildNodeFromFunction(Type type, List<TokenValue> tokenValues, DocumentContext context, DocumentContext rootContext) {
         TokenValue tokenValue = tokenValues.remove(0);
         final String funcName = tokenValue.getValue();
         logger.trace("build Node with [{}] function to [{}] type", funcName, type);
@@ -168,11 +173,11 @@ public class JsonBuilder {
                 tokenValue = tokenValues.get(0);
                 Object argument = null;
                 if (tokenValue.getToken() == Token.JSON_PATH)
-                    argument = context.read(tokenValue.getValue());
+                    argument = parseJsonPath(tokenValue.getValue(), context, rootContext);
                 else if (tokenValue.getToken() == Token.FUNC)
-                    argument = buildNodeFromFunction(null, tokenValues, context);
+                    argument = buildNodeFromFunction(null, tokenValues, context, rootContext);
                 else if (tokenValue.getToken() == Token.RAW)
-                    argument = parseRawData(tokenValue.getValue(), context);
+                    argument = parseRawData(tokenValue.getValue(), context, rootContext);
                 else if (tokenValue.getToken() == Token.END_FUNC)
                     break;
                 tokenValues.remove(0);
@@ -186,11 +191,11 @@ public class JsonBuilder {
             while (!tokenValues.isEmpty()) {
                 tokenValue = tokenValues.get(0);
                 if (tokenValue.getToken() == Token.JSON_PATH)
-                    arguments.add(context.read(tokenValue.getValue()));
+                    arguments.add(parseJsonPath(tokenValue.getValue(), context, rootContext));
                 else if (tokenValue.getToken() == Token.FUNC)
-                    arguments.add(buildNodeFromFunction(null, tokenValues, context));
+                    arguments.add(buildNodeFromFunction(null, tokenValues, context, rootContext));
                 else if (tokenValue.getToken() == Token.RAW)
-                    arguments.add(parseRawData(tokenValue.getValue(), context));
+                    arguments.add(parseRawData(tokenValue.getValue(), context, rootContext));
                 else if (tokenValue.getToken() == Token.END_FUNC)
                     break;
                 tokenValues.remove(0);
@@ -199,7 +204,15 @@ public class JsonBuilder {
         }
     }
 
-    private Object parseRawData(String rawData, DocumentContext context) {
+    private Object parseJsonPath(String jsonPath, DocumentContext context, DocumentContext rootContext) {
+        if(jsonPath.startsWith("$$")) {
+            logger.trace("Using root context");
+            return rootContext.read(jsonPath.substring(1));
+        }
+        return context.read(jsonPath);
+    }
+
+    private Object parseRawData(String rawData, DocumentContext context, DocumentContext rootContext) {
         if (PATTERN_NUMERIC.matcher(rawData).matches()) {
             if (rawData.contains(".")) {
                 try {
@@ -218,7 +231,7 @@ public class JsonBuilder {
         if (rawData.equalsIgnoreCase("true") || rawData.equalsIgnoreCase("false")) {
             return rawData.equalsIgnoreCase("true");
         }
-        return buildStringFromRawData(rawData, context);
+        return buildStringFromRawData(rawData, context, rootContext);
     }
 
     private Object castToType(Object object, Type type) {
@@ -258,7 +271,7 @@ public class JsonBuilder {
         return object;
     }
 
-    private String buildStringFromRawData(String str, DocumentContext context) {
+    private String buildStringFromRawData(String str, DocumentContext context, DocumentContext rootContext) {
         boolean isEscaped = false;
         StringBuilder builder = new StringBuilder();
         StringBuilder varBuilder = new StringBuilder();
@@ -275,7 +288,7 @@ public class JsonBuilder {
                 i++;
                 varCount--;
                 if (varCount == 0) {
-                    builder.append(build(varBuilder.substring(2, varBuilder.length() - 2), context));
+                    builder.append(build(varBuilder.substring(2, varBuilder.length() - 2), context, rootContext));
                     varBuilder.delete(0, varBuilder.length());
                 }
             } else if (varCount != 0) {

@@ -404,6 +404,22 @@ public class JsonBuilderTest {
         assertEquals("str5", result.get(2).get("first"));
     }
 
+    @Test
+    public void buildArray__withObjectAndRootContextJsonPath() {
+        Map<String, Object> childSchema = new HashMap<>();
+        childSchema.put("first", "$.second");
+        childSchema.put("second", "$$[@{$.second}@].first");
+        childSchema.put("__array_schema", "$[?(@.fourth == false)]");
+
+        List<Map<String, Object>> result = (List<Map<String, Object>>)jsonBuilder.build(Collections.singletonList(childSchema), documentContext);
+
+        assertEquals(2, result.size());
+        assertEquals(2, result.get(0).get("first"));
+        assertEquals("str3", result.get(0).get("second"));
+        assertEquals(0, result.get(1).get("first"));
+        assertEquals("str1", result.get(1).get("second"));
+    }
+
     private List<Data> buildData() {
         return Arrays.asList(
                 new Data("str1", 1L, 1.5, true, 2),
