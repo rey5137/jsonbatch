@@ -3,6 +3,8 @@ JsonBatch
 
 **An Engine to run batch request with JSON based REST APIs**
 
+You can try out JsonBatch via [this web app](https://jsonbatch-playground.herokuapp.com)
+
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core)
 [![Javadoc](https://www.javadoc.io/badge/com.github.rey5137/jsonbatch-core.svg)](http://www.javadoc.io/doc/com.github.rey5137/jsonbatch-core)
 
@@ -671,7 +673,7 @@ Let me explain this template:
 - After that, it will make a POST request to **https://jsonplaceholder.typicode.com/posts** to create a new post with userId & body are same as first post.
 - If the POST request succeed, it will return a response with both first post & new post. If not (status != 201), it will return a response with new_post = "Error". 
 
-You can try out this example via [this web app](https://jsonbatch-demo.herokuapp.com/)
+You can try out this example via [this web app](https://jsonbatch-playground.herokuapp.com/sample1)
 
 ## Custom function
 You can add your own custom function to JsonBuilder object. All the functions have to extend from a base class **Function**:
