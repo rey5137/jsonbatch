@@ -1,12 +1,15 @@
 JsonBatch
 =====================
 
-**An Engine to run batch request with JSON based REST APIs**
-
-You can try out JsonBatch via [this web app](https://jsonbatch-playground.herokuapp.com)
-
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.rey5137/jsonbatch-core)
 [![Javadoc](https://www.javadoc.io/badge/com.github.rey5137/jsonbatch-core.svg)](http://www.javadoc.io/doc/com.github.rey5137/jsonbatch-core)
+
+**An Engine to run batch request with JSON based REST APIs**
+
+This library will help you focus on actual business logic without having to create a lot of boilerplate requests & responses classes.
+Useful in case you need to roll out an adapter for 2 APIs set quickly.
+
+You can try out JsonBatch via [this web app](https://jsonbatch-playground.herokuapp.com)
 
 * [Getting Started](#getting-started)
 * [How it work](#how-it-work)
