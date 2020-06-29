@@ -82,16 +82,22 @@ public class JsonBuilder {
     private Map buildObject(Map<String, Object> schema, DocumentContext context, DocumentContext rootContext) {
         Map<String, Object> result = new LinkedHashMap<>();
         schema.forEach((key, value) -> {
-            if (isValidKey(key)) {
-                logger.info("Build for [{}] key with schema: {}", key, value);
+            String actualKey = key;
+            if(hasInlineVariable(key)) {
+                logger.trace("Found inline variable in [{}] key", key);
+                actualKey = buildStringFromRawData(key, context, rootContext);
+            }
+
+            if (isValidKey(actualKey)) {
+                logger.info("Build for [{}] key with schema: {}", actualKey, value);
                 if (value instanceof String)
-                    result.put(key, buildNode((String) value, context, rootContext));
+                    result.put(actualKey, buildNode((String) value, context, rootContext));
                 else if (value instanceof Map)
-                    result.put(key, buildObject((Map) value, context, rootContext));
+                    result.put(actualKey, buildObject((Map) value, context, rootContext));
                 else if (value instanceof Collection)
-                    result.put(key, buildList((Collection) value, context, rootContext));
+                    result.put(actualKey, buildList((Collection) value, context, rootContext));
                 else
-                    result.put(key, value);
+                    result.put(actualKey, value);
             }
         });
         return result;
@@ -132,7 +138,7 @@ public class JsonBuilder {
 
     private Object buildNodeFromJsonPath(Type type, DocumentContext context, DocumentContext rootContext, String jsonPath) {
         logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
-        if(jsonPath.contains("@{")) {
+        if(hasInlineVariable(jsonPath)) {
             logger.trace("Found inline variable");
             jsonPath = buildStringFromRawData(jsonPath, context, rootContext);
             logger.trace("build Node with [{}] jsonPath to [{}] type", jsonPath, type);
@@ -312,6 +318,8 @@ public class JsonBuilder {
             }
             i++;
         }
+        if(varBuilder.length() > 0)
+            builder.append(varBuilder);
         return builder.toString();
     }
 
@@ -321,6 +329,10 @@ public class JsonBuilder {
 
     private boolean isValidKey(String key) {
         return !KEY_ARRAY_SCHEMA.equals(key);
+    }
+
+    private boolean hasInlineVariable(String value) {
+        return value.contains("@{");
     }
 
     public enum Type {

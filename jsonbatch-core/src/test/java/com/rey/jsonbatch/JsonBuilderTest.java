@@ -318,6 +318,20 @@ public class JsonBuilderTest {
     }
 
     @Test
+    public void buildObject__withKeyHasInlineVariable() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("key_@{$[0].first}@", 1);
+        schema.put("key_@{$[0].second}@", "$[0].third");
+        schema.put("key_@{abc", 2);
+
+        Map<String, Object> result = (Map<String, Object>)jsonBuilder.build(schema, documentContext);
+
+        assertEquals(1, result.get("key_str1"));
+        assertEquals(1.5, result.get("key_1"));
+        assertEquals(2, result.get("key_@{abc"));
+    }
+
+    @Test
     public void buildArray__withStringSchema__withSingleItem() {
         List result = (List)jsonBuilder.build(Collections.singletonList("$[0].second"), documentContext);
 
