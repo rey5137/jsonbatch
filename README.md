@@ -14,12 +14,14 @@ You can try out JsonBatch via [this web app](https://jsonbatch-playground.heroku
 * [Data type](#data-type)
 * [Function](#function)
 * [Raw String](#raw-string)
+* [Object](#object)
 * [Array](#array)
 * [Where is the data](#where-is-the-data)
 * [A real example](#a-real-example)
 * [Custom function](#custom-function)
 * [Loop requests](#loop-requests)
 * [Response transform](#response-transform)
+* [Temporary variables](#temporary-variables)
 
 ## Getting Started
 
@@ -28,7 +30,7 @@ JsonBatch is available at the Central Maven Repository.
 <dependency>
   <groupId>com.github.rey5137</groupId>
   <artifactId>jsonbatch-core</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.1</version>
 </dependency> 
 
 // need to include jsonpath dependency
@@ -271,7 +273,10 @@ JsonBatch will use the type of extracted value instead of casting it.
  | regex      | __regex("<json_path>", "\<pattern>", \<index>)  | __regex("$.field_a", "(.*)", 1)  | Extract from string by regex pattern and group index |
  
  ## Raw String
- For string field, instead of using JsonPath or Function, we can use raw string directly. Note that JsonBatch support inline variable with format: **@{\<schema>}@**
+ For string field, instead of using JsonPath or Function, we can use raw string directly. 
+ Note that JsonBatch support inline variable with format: **@{\<schema>}@**
+ (You can use inline variable in both JSON key & value)
+ 
  Some examples:
  <table>
  <tr> <td> Template </td> <td> Result </td> </tr>
@@ -341,6 +346,85 @@ JsonBatch will use the type of extracted value instead of casting it.
  </table>
  
  
+ ## Object
+ When you define schema for each key in object, you often have to repeat a lot of JsonPath. 
+ To help reduce repeated works, you can add **__object_schema** key to define JSON context of current object. 
+ The root JsonPath ($) will point to new JSON context, and you can use **$$** at the start of JsonPath 
+ to point to grand JSON context.
+ Below is two examples with 2 styles & same output:
+ 
+ <table>
+ <tr> <td> Template </td> <td> Value </td> <td> Result </td> </tr>
+ <tr>
+ <td>
+ 
+ ```json
+ {
+    "field_1": "int $.responses[0].body.field_a",
+    "field_2": "$.responses[0].body.field_b"
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+    "field_a": "10",
+    "field_b": 1.5,
+     ...
+ }
+ ```
+ 
+ </td>
+ <td>
+ 
+ ```json
+ {
+     "field_1": 10,
+     "field_2": 1.5
+ }
+ ```
+ 
+ </td>
+ </tr>
+ 
+ <tr>
+ <td>
+  
+  ```json
+  {
+     "field_1": "$.field_a",
+     "field_2": "$.field_b",
+     "__object_schema": "$.responses[0].body"
+  }
+  ```
+  
+  </td>
+  <td>
+  
+  ```json
+  {
+     "field_a": "10",
+     "field_b": 1.5,
+     ... 
+  }
+  ```
+  
+  </td>
+  <td>
+  
+  ```json
+  {
+      "field_1": 10,
+      "field_2": 1.5
+  }
+  ```
+  
+  </td>
+ </tr>
+ 
+ </table>
  
  ## Array
  There is several way you can use to build Json Array:
@@ -859,3 +943,42 @@ then you can supply a list of transformers inside the request template.
 ```  
 The transformer template is same as response template, the only different is the JSON object it'll work on (the root level of JsonPath will be different). 
 Transformer template works on each corresponding JSON response, but response template works on the grand JSON that constains all data. 
+
+## Temporary Variables
+In case you want to store some temporary variables, you can define **vars** object inside request template. 
+```json
+{
+  "requests": [
+      {
+        "predicate": "...",
+        "http_method": "...",
+        "url": "...",
+        "headers": { ... },
+        "body": { ... },
+        "vars": {
+          "var_1": "...",
+          "var_2": "...",
+          ...
+        },
+        ...
+      },
+      ...
+  ]
+  ...
+}
+```  
+After executing request (and transform response if possible), the Engine will loop though each key inside **vars** object, 
+build value and store it in **vars** object of grand JSON:
+```json
+{
+  "original": {...},
+  "requests": [...],
+  "responses": [...],
+  "vars": {
+    "var_1": "...",
+    "var_2": "...",
+    ...
+  }
+}
+```  
+Note that the Engine update variable's value immediately so it can be available for next variable processing step.
