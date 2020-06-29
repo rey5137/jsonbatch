@@ -322,6 +322,47 @@ class BatchEngineTest {
     }
 
     @Test
+    fun execute__withVar() {
+        val template = """
+            {
+                "requests": [
+                    {
+                        "http_method": "GET",
+                        "url": "https://test.com",
+                        "body": {},
+                        "vars": {
+                            "var_1": "int $.responses[0].body.key_2",
+                            "var_@{$.vars.var_1}@": "$.responses[0].body.key_1"
+                        }
+                    }
+                ],
+                "responses": [
+                    {
+                        "body": "$.vars"
+                    }
+                ]
+            }
+        """.toObj(BatchTemplate::class.java)
+        val response = """
+            {
+                "status": 201,
+                "headers": {},
+                "body": {
+                    "key_1": "a",
+                    "key_2": "2"
+                }
+            }
+        """.toObj(Response::class.java)
+
+        doReturn(response).`when`(requestDispatcherMock).dispatch(any(Request::class.java), any(JsonProvider::class.java), any(DispatchOptions::class.java))
+        val finalResponse = batchEngine.execute(Request(), template)
+        println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalResponse))
+        val context = JsonPath.using(configuration).parse(finalResponse.body)
+        assertEquals(2, context.read("$.var_1", Int::class.java))
+        assertEquals("a", context.read("$.var_2", String::class.java))
+    }
+
+    @Test
     fun test() {
         val template = """
             {

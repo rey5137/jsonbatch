@@ -1,6 +1,7 @@
 package com.rey.jsonbatch.model;
 
 import java.util.List;
+import java.util.Map;
 
 public class RequestTemplate {
 
@@ -21,6 +22,8 @@ public class RequestTemplate {
     private LoopTemplate loop;
 
     private List<ResponseTemplate> transformers;
+
+    private Map<String, Object> vars;
 
     public String getPredicate() {
         return predicate;
@@ -92,5 +95,13 @@ public class RequestTemplate {
 
     public void setTransformers(List<ResponseTemplate> transformers) {
         this.transformers = transformers;
+    }
+
+    public Map<String, Object> getVars() {
+        return vars;
+    }
+
+    public void setVars(Map<String, Object> vars) {
+        this.vars = vars;
     }
 }

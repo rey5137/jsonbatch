@@ -40,7 +40,7 @@ public class BatchEngine {
     private static final String KEY_RESPONSES = "responses";
     private static final String KEY_COUNTER = "counter";
     private static final String KEY_TIMES = "times";
-
+    private static final String KEY_VARS = "vars";
 
     public BatchEngine(Configuration configuration,
                        JsonBuilder jsonBuilder,
@@ -125,6 +125,9 @@ public class BatchEngine {
                 Response transformedResponse = transformResponse(response, step.requestTemplate.getTransformers());
                 step.requests.add(request.toMap());
                 step.responses.add(transformedResponse.toMap());
+
+                processVars(step.requestTemplate.getVars(), context, jsonContext);
+
                 ResponseTemplate responseTemplate = chooseResponseTemplate(step.requestTemplate.getResponses(), context);
                 if (responseTemplate != null) {
                     logger.info("Found break response");
@@ -132,6 +135,7 @@ public class BatchEngine {
                     logger.info("Done executing batch with [{}] original request", originalRequest);
                     return response;
                 }
+
                 step = buildStep(step.requestTemplate.getRequests(), step.requests, step.responses, context, step.index + 1);
                 if (step != null)
                     queue.push(step);
@@ -232,6 +236,18 @@ public class BatchEngine {
                 headers.put(key, Collections.singletonList(String.valueOf(value)));
         });
         return headers;
+    }
+
+    private void processVars(Map<String, Object> schema, DocumentContext context, Map<String, Object> jsonContext) {
+        if (schema == null)
+            return;
+
+        Map<String, Object> vars = (Map<String, Object>) jsonContext.computeIfAbsent(KEY_VARS, key -> new LinkedHashMap<>());
+        for (String key : schema.keySet()) {
+            String actualKey = String.valueOf(jsonBuilder.build(key, context));
+            Object value = jsonBuilder.build(schema.get(key), context);
+            vars.put(actualKey, value);
+        }
     }
 
     private boolean isLoopStep(Step step) {
