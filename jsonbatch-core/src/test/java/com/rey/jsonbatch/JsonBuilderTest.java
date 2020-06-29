@@ -332,6 +332,19 @@ public class JsonBuilderTest {
     }
 
     @Test
+    public void buildObject__withObjectSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("first", "$.second");
+        schema.put("second", "$$[@{$.second}@].first");
+        schema.put("__object_schema", "$[?(@.fourth == false)]");
+
+        Map<String, Object> result = (Map<String, Object>)jsonBuilder.build(schema, documentContext);
+
+        assertEquals(2, result.get("first"));
+        assertEquals("str3", result.get("second"));
+    }
+
+    @Test
     public void buildArray__withStringSchema__withSingleItem() {
         List result = (List)jsonBuilder.build(Collections.singletonList("$[0].second"), documentContext);
 

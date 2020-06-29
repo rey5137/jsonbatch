@@ -30,6 +30,7 @@ public class JsonBuilder {
     private static final Pattern PATTERN_NUMERIC = Pattern.compile("^[0123456789.]*$");
 
     private static final String KEY_ARRAY_SCHEMA = "__array_schema";
+    private static final String KEY_OBJECT_SCHEMA = "__object_schema";
 
     private Map<String, Function> functionMap = new HashMap<>();
 
@@ -81,14 +82,23 @@ public class JsonBuilder {
 
     private Map buildObject(Map<String, Object> schema, DocumentContext context, DocumentContext rootContext) {
         Map<String, Object> result = new LinkedHashMap<>();
-        schema.forEach((key, value) -> {
-            String actualKey = key;
-            if(hasInlineVariable(key)) {
-                logger.trace("Found inline variable in [{}] key", key);
-                actualKey = buildStringFromRawData(key, context, rootContext);
-            }
 
-            if (isValidKey(actualKey)) {
+        if(schema.containsKey(KEY_OBJECT_SCHEMA)) {
+            logger.trace("Found object schema. Switching context");
+            Object object = toSingleObject(build(schema.get(KEY_OBJECT_SCHEMA), context, rootContext));
+            context = JsonPath.using(context.configuration()).parse(object);
+        }
+
+        for(String key : schema.keySet()) {
+            if (isValidKey(key)) {
+                Object value = schema.get(key);
+                String actualKey = key;
+
+                if(hasInlineVariable(key)) {
+                    logger.trace("Found inline variable in [{}] key", key);
+                    actualKey = buildStringFromRawData(key, context, rootContext);
+                }
+
                 logger.info("Build for [{}] key with schema: {}", actualKey, value);
                 if (value instanceof String)
                     result.put(actualKey, buildNode((String) value, context, rootContext));
@@ -99,7 +109,8 @@ public class JsonBuilder {
                 else
                     result.put(actualKey, value);
             }
-        });
+        }
+
         return result;
     }
 
@@ -119,12 +130,7 @@ public class JsonBuilder {
                     logger.error("Missing array schema in child schema");
                     throw new IllegalArgumentException("Missing array schema in child schema");
                 }
-                Object item = build(arraySchema, context, rootContext);
-                Collection<Object> items;
-                if (item instanceof Collection)
-                    items = (Collection) item;
-                else
-                    items = Collections.singletonList(item);
+                Collection<Object> items = toObjectList(build(arraySchema, context, rootContext));
                 result.addAll(items.stream()
                         .map(object -> build(value, JsonPath.using(context.configuration()).parse(object), rootContext))
                         .collect(Collectors.toList()));
@@ -148,20 +154,13 @@ public class JsonBuilder {
             return null;
         if (type == null)
             return object;
-        if (!type.isArray) {
-            if (object instanceof Collection) {
-                Collection list = (Collection) object;
-                object = list.isEmpty() ? null : list.iterator().next();
-            }
-            return castToType(object, type);
-        } else {
-            if (!(object instanceof Collection)) {
-                object = Collections.singletonList(object);
-            }
-            return ((Collection) object).stream()
+
+        if (!type.isArray)
+            return castToType(toSingleObject(object), type);
+        else
+            return toObjectList(object).stream()
                     .map(obj -> castToType(obj, type.elementType))
                     .collect(Collectors.toList());
-        }
     }
 
     private Object buildNodeFromFunction(Type type, List<TokenValue> tokenValues, DocumentContext context, DocumentContext rootContext) {
@@ -328,11 +327,26 @@ public class JsonBuilder {
     }
 
     private boolean isValidKey(String key) {
-        return !KEY_ARRAY_SCHEMA.equals(key);
+        return !KEY_ARRAY_SCHEMA.equals(key) && !KEY_OBJECT_SCHEMA.equals(key);
     }
 
     private boolean hasInlineVariable(String value) {
         return value.contains("@{");
+    }
+
+    private Object toSingleObject(Object value) {
+        if (value instanceof Collection) {
+            Collection list = (Collection) value;
+            return list.isEmpty() ? null : list.iterator().next();
+        }
+        return value;
+    }
+
+    private Collection<Object> toObjectList(Object value) {
+        if (!(value instanceof Collection)) {
+            return Collections.singletonList(value);
+        }
+        return (Collection)value;
     }
 
     public enum Type {
