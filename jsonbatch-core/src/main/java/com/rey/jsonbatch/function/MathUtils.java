@@ -45,7 +45,7 @@ public class MathUtils {
         return null;
     }
 
-    public static Boolean toBoolean(Object value) {
+    public static Boolean toBoolean(Object value, Boolean defaultValue) {
         if (value instanceof Boolean)
             return (Boolean)value;
         if (value instanceof Integer)
@@ -62,7 +62,7 @@ public class MathUtils {
             return !value.equals(BigDecimal.ZERO);
         if (value instanceof String)
             return ((String) value).equalsIgnoreCase("true");
-        return null;
+        return defaultValue;
     }
 
     public static BigInteger min(BigInteger a, BigInteger b) {

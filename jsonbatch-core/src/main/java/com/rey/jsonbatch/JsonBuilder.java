@@ -268,7 +268,7 @@ public class JsonBuilder {
                     return new BigDecimal(object.toString());
                 throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to number");
             case BOOLEAN:
-                Boolean result = MathUtils.toBoolean(object);
+                Boolean result = MathUtils.toBoolean(object, null);
                 if (result == null)
                     throw new IllegalArgumentException("Cannot cast " + object.getClass() + " to boolean");
                 return result;

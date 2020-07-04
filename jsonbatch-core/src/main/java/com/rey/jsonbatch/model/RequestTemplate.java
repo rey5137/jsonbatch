@@ -23,7 +23,7 @@ public class RequestTemplate {
 
     private List<ResponseTemplate> transformers;
 
-    private Map<String, Object> vars;
+    private List<VarTemplate> vars;
 
     public String getPredicate() {
         return predicate;
@@ -97,11 +97,11 @@ public class RequestTemplate {
         this.transformers = transformers;
     }
 
-    public Map<String, Object> getVars() {
+    public List<VarTemplate> getVars() {
         return vars;
     }
 
-    public void setVars(Map<String, Object> vars) {
+    public void setVars(List<VarTemplate> vars) {
         this.vars = vars;
     }
 }

@@ -330,10 +330,18 @@ class BatchEngineTest {
                         "http_method": "GET",
                         "url": "https://test.com",
                         "body": {},
-                        "vars": {
-                            "var_1": "int $.responses[0].body.key_2",
-                            "var_@{$.vars.var_1}@": "$.responses[0].body.key_1"
-                        }
+                        "vars": [
+                            {
+                                "vars": {
+                                    "var_1": "int $.responses[0].body.key_2"
+                                }
+                            },
+                            {
+                                "vars": {
+                                    "var_@{$.vars.var_1}@": "$.responses[0].body.key_1"
+                                }
+                            }
+                        ]
                     }
                 ],
                 "responses": [

@@ -12,6 +12,7 @@ import com.rey.jsonbatch.model.Request;
 import com.rey.jsonbatch.model.RequestTemplate;
 import com.rey.jsonbatch.model.Response;
 import com.rey.jsonbatch.model.ResponseTemplate;
+import com.rey.jsonbatch.model.VarTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,7 @@ public class BatchEngine {
                 if (step.loopTime >= template.getLoopOptions().getMaxLoopTime()) {
                     logger.warn("Loop request with [{}] index exceed max loop time", step.index);
                 } else {
-                    Boolean shouldLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context));
+                    boolean shouldLoop = MathUtils.toBoolean(jsonBuilder.build(loopTemplate.getCounterPredicate(), context), true);
                     if (shouldLoop) {
                         Step nextStep = buildStep(loopTemplate.getRequests(), new ArrayList<>(), new ArrayList<>(), context, 0);
                         if (nextStep != null) {
@@ -105,6 +106,8 @@ public class BatchEngine {
                         }
                     }
                 }
+
+                processVars(step.requestTemplate.getVars(), context, jsonContext);
 
                 ResponseTemplate responseTemplate = chooseResponseTemplate(step.requestTemplate.getResponses(), context);
                 if (responseTemplate != null) {
@@ -169,7 +172,7 @@ public class BatchEngine {
         if (requestTemplates == null)
             return null;
         for (RequestTemplate requestTemplate : requestTemplates) {
-            if (requestTemplate.getPredicate() == null || MathUtils.toBoolean(jsonBuilder.build(requestTemplate.getPredicate(), context)))
+            if (MathUtils.toBoolean(jsonBuilder.build(requestTemplate.getPredicate(), context), true))
                 return requestTemplate;
         }
         return null;
@@ -179,7 +182,7 @@ public class BatchEngine {
         if (responseTemplates == null)
             return null;
         for (ResponseTemplate responseTemplate : responseTemplates) {
-            if (responseTemplate.getPredicate() == null || MathUtils.toBoolean(jsonBuilder.build(responseTemplate.getPredicate(), context)))
+            if (MathUtils.toBoolean(jsonBuilder.build(responseTemplate.getPredicate(), context), true))
                 return responseTemplate;
         }
         return null;
@@ -238,15 +241,16 @@ public class BatchEngine {
         return headers;
     }
 
-    private void processVars(Map<String, Object> schema, DocumentContext context, Map<String, Object> jsonContext) {
-        if (schema == null)
+    private void processVars(List<VarTemplate> varTemplates, DocumentContext context, Map<String, Object> jsonContext) {
+        if (varTemplates == null)
             return;
 
         Map<String, Object> vars = (Map<String, Object>) jsonContext.computeIfAbsent(KEY_VARS, key -> new LinkedHashMap<>());
-        for (String key : schema.keySet()) {
-            String actualKey = String.valueOf(jsonBuilder.build(key, context));
-            Object value = jsonBuilder.build(schema.get(key), context);
-            vars.put(actualKey, value);
+        for (VarTemplate varTemplate : varTemplates) {
+            if (MathUtils.toBoolean(jsonBuilder.build(varTemplate.getPredicate(), context), true)) {
+                Map<String, Object> map = (Map<String, Object>) jsonBuilder.build(varTemplate.getVars(), context);
+                map.forEach(vars::put);
+            }
         }
     }
 
