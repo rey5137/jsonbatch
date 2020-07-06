@@ -948,7 +948,7 @@ The transformer template is same as response template, the only different is the
 Transformer template works on each corresponding JSON response, but response template works on the grand JSON that constains all data. 
 
 ## Temporary Variables
-In case you want to store some temporary variables, you can define **vars** object inside request template. 
+In case you want to store some temporary variables, you can define **vars templates** inside request template. 
 ```json
 {
   "requests": [
@@ -958,11 +958,16 @@ In case you want to store some temporary variables, you can define **vars** obje
         "url": "...",
         "headers": { ... },
         "body": { ... },
-        "vars": {
-          "var_1": "...",
-          "var_2": "...",
-          ...
-        },
+        "vars": [
+          {
+            "predicate": "...",
+            "vars": {
+              "var_1": "...",
+              "var_2": "...",
+              "..."
+            }
+          }
+        ],
         ...
       },
       ...
@@ -970,8 +975,8 @@ In case you want to store some temporary variables, you can define **vars** obje
   ...
 }
 ```  
-After executing request (and transform response if possible), the Engine will loop though each key inside **vars** object, 
-build value and store it in **vars** object of grand JSON:
+After executing request (and transform response if possible), the Engine will loop though each vars template and evaluate its predicate.
+If the template predicate is true, it will build vars object and merge result with **vars** object of grand JSON:
 ```json
 {
   "original": {...},
@@ -984,4 +989,3 @@ build value and store it in **vars** object of grand JSON:
   }
 }
 ```  
-Note that the Engine update variable's value immediately so it can be available for next variable processing step.
