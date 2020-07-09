@@ -6,8 +6,10 @@ JsonBatch
 
 **An Engine to run batch request with JSON based REST APIs**
 
-This library will help you focus on actual business logic without having to create a lot of boilerplate requests & responses classes.
-Useful in case you need to roll out an adapter for 2 APIs set quickly.
+Some usecase for this library:
+- Provide a batch API to your REST API set.
+- Quickly roll out an adapter to migrate old API set.
+- Remove all boilerplate requests & responses classes.
 
 You can try out JsonBatch via [this web app](https://jsonbatch-playground.herokuapp.com)
 
